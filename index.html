@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style>
+h1 {
+    text-align: center;
+}
+p {
+    text-align: center;
+    padding: 10px 10px 100px 10px;
+}
+button {
+  font-size: 2rem;
+  font-family: inherit;
+  color: #FFFFF;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.container {
+    display: grid;
+    grid-template-columns: auto auto auto;
+}
+</style>
+</head>
+    <body>
+        <audio id="a" src="a.mp3" preload="auto"></audio>
+        <audio id="b" src="b.mp3" preload="auto"></audio>
+        <audio id="c" src="c.mp3" preload="auto"></audio>
+        <audio id="d" src="d.mp3" preload="auto"></audio>
+        <audio id="e" src="e.mp3" preload="auto"></audio>
+        <audio id="f" src="f.mp3" preload="auto"></audio>
+
+        <h1>Digital Audio Workstation (DAW)</h1>
+
+        <p>Spauskite ant mygtuko, kad pasigirstu natos garso irasas</p>
+
+        <div class="container">
+            <button type="button" onclick="document.getElementById('a').play()">
+                Nata A
+            </button>
+            <button type="button" onclick="document.getElementById('b').play()">
+                Nata B
+            </button>
+            <button type="button" onclick="document.getElementById('c').play()">
+                Nata C
+            </button>
+            <button type="button" onclick="document.getElementById('d').play()">
+                Nata D
+            </button>
+            <button type="button" onclick="document.getElementById('e').play()">
+                Nata E
+            </button>
+            <button type="button" onclick="document.getElementById('f').play()">
+                Nata F
+            </button>
+        </div>
+    </body>
+</html>
+
