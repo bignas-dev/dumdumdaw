@@ -25,7 +25,7 @@ def sequencer_page():
         /*NATOS BLOKELIO STILIAI*/
         .note {
             position: absolute;
-            height: 60px;
+            height: 80px;
             background: #2ecc71;
             border: 1px solid #27ae60;
             cursor: move;
@@ -49,6 +49,9 @@ def sequencer_page():
         #track-1-label {
             border-radius: 10px 0px 0px 0px;
         }
+        #track-1-box {
+            border-radius: 10px 0px 0px 0px;
+        }
 
         /*SCROLLBARO RUOŽO STILIAI*/        
         ::-webkit-scrollbar {
@@ -68,6 +71,29 @@ def sequencer_page():
         ::-webkit-scrollbar-thumb:hover {
             background: #ffffff; 
         }
+        
+        /*TRACKŲ PLAY IR VOLUME MYGTUKŲ BENDRI STILIAI*/
+        .parametersVolumeButtons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e6aace;
+            border: none;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            font-size: 16px;
+            margin: 4px 2px;
+        }
+        
+        /*TRACKŲ INSTRUMENTO PASIRINKIMO DROPDOWN-LIST MYGTUKO STILIAI*/
+        #selectInstrument {
+            background-color: white;
+            color: black;
+            border-radius: 10px;
+        }
+        
 
     </style>
 
@@ -91,7 +117,7 @@ def sequencer_page():
     <!-- flex-direction:row padaro, kad labelų ir sequencerio dalys rikiuotųsi eilute, ne stulpeliu (ne vertikaliai viens po kitu); justify-content:center padaro, kad visa labelų ir sequencerio visuma būtų horizontaliai vidury, o ne kairėj ar dar kur -->
     <div style="display:flex; flex-direction:row; justify-content:center; margin-top: 50px;">
         <!-- LEFT LABELS (BENDRAI VISI LABELAI) -->
-        <div id="labels" style="display:flex; flex-direction:column; background:#202020; color:#eee; font-family:Century Gothic; border-radius:10px 0px 0px 10px;">
+        <div id="labels" style="display:flex; flex-direction:column; width: 170px; background:#202020; color:#eee; font-family:Century Gothic; border-radius:10px 0px 0px 10px;">
         </div>
 
         <!-- MAIN SEQUENCER CONTAINER (BENDRAI VISŲ TRACKŲ SKILTIS) -->
@@ -100,12 +126,13 @@ def sequencer_page():
             <div id="sequencer" style="width:2500px; background:#111; position:relative;"></div>
         </div>
     </div>
+                                                                     
 
     <script>
     const sequencer = document.getElementById('sequencer');
     const labelsDiv = document.getElementById('labels');
-    const trackCount = 4;         // number of tracks
-    const trackHeight = 80;       // per-track height
+    const trackCount = 10;         // number of tracks
+    const trackHeight = 100;       // per-track height
     const timelineWidthPx = 2500; // timeline width
     const gridSize = 10;
     let trackNotes = {};          // per-track note data
@@ -114,7 +141,17 @@ def sequencer_page():
     // NUSTATOMAS VISO SEQUENCER ELEMENTO AUKŠTIS (priklauso nuo trackų skaičiaus)
     sequencer.style.height = (trackCount * trackHeight) + 'px';
 
-    // CREATE TRACKS AND LABELS (LABEL - KVADRAČIUKAS KAIRĖJE PRIE PATIES TRACKO, TEN KUR PVZ. "TRACK 1")
+    // APIBRĖŽIAMAS DAW'O INSTRUMENTŲ SĄRAŠAS
+    const instrumentList = [
+            {value: "", text: "Choose instrument"},
+            {value: "piano", text: "Piano"},
+            {value: "guitar", text: "Guitar"},
+            {value: "drums", text: "Drums"},
+            {value: "organ", text: "Organ"},
+            {value: "synth", text: "Synth"},
+    ];                                  
+
+// CREATE TRACKS AND LABELS (LABEL - KVADRAČIUKAS KAIRĖJE PRIE PATIES TRACKO, TEN KUR PVZ. "TRACK 1")
     for (let i = 0; i < trackCount; i++) {
         // TRACKAI ATSKIRAI
         const track = document.createElement('div');
@@ -132,18 +169,66 @@ def sequencer_page():
         track.addEventListener('dblclick', e => addNoteToTrack(track, e));
 
         // LABELAI (kairėje) ATSKIRAI
+                                      
+        // TRACK LABELO ELEMENTŲ CONTAINER ('DĖŽĖ')                              
+        const labelBox = document.createElement('div');
+        labelBox.setAttribute("id", "track-" + (i+1) + "-box");
+        labelBox.style.height = trackHeight + 'px';
+        labelBox.style.background = '#253644';              // label langelio fono spalva
+        labelBox.style.display = 'block';                   // kad elementai viens po kitu eitų (track pavadinimas, instrumentų mygtukas turi būt viens po kitu; kiti du mygtukai bus virš instrumentų mygtuko, tai bendram jų div irgi tinka block display, nors ir patys mygtukai bus šone viens kito)
+        //labelBox.style.alignItems = 'center';
+        //labelBox.style.justifyContent = 'center';
+        labelBox.style.borderBottom = '1px solid #333';
+        labelBox.style.padding = '10px 10px';
+        
+        // PATS TRACK LABELAS                              
         const label = document.createElement('div');
-        label.setAttribute("id", "track-" + (i+1) + "-label")                 // prie kiekvieno label langelio elemento prideda html ID atributą (tikslas — tokiu būdu būtų galima customizint būtent 'Track 1' label langelį, kad būtų galima jo top-left kampą padaryti apvalų (apvalint TIK bendro visų labelų elemento top-left kampą nepavyksta, nes tuo atveju tą apvalintą kampą tiesiog užstoja "Track 1" label langelis, jo nesimato; dėl to reikia apvalint IR bendro visų labelų elemento top-left kampą, IR "Track 1" label langelio top-left kampą))
+        label.setAttribute("id", "track-" + (i+1) + "-label");                 // prie kiekvieno label langelio elemento prideda html ID atributą (tikslas — tokiu būdu būtų galima customizint būtent 'Track 1' label langelį, kad būtų galima jo top-left kampą padaryti apvalų (apvalint TIK bendro visų labelų elemento top-left kampą nepavyksta, nes tuo atveju tą apvalintą kampą tiesiog užstoja "Track 1" label langelis, jo nesimato; dėl to reikia apvalint IR bendro visų labelų elemento top-left kampą, IR "Track 1" label langelio top-left kampą))
         label.textContent = 'Track ' + (i + 1);
-        label.style.height = trackHeight + 'px';
-        label.style.background = '#253644';             // label langelio fono spalva
-        label.style.display = 'flex';
-        label.style.alignItems = 'center';
-        label.style.justifyContent = 'center';
-        label.style.borderBottom = '1px solid #333';
-        label.style.padding = '0 10px';
-        labelsDiv.appendChild(label);
+        label.style.flex = '1';
+        
+                                      
+        // PARAMETRŲ IR VOLUME MYGTUKŲ KONTEINERIS
+        const parametersVolumeButtonsContainer = document.createElement('div');
+        parametersVolumeButtonsContainer.style.display = "flex";
+        //parametersVolumeButtonsContainer.style.justifyContent = "center";
+                                      
+        // PARAMETRŲ MYGTUKAS
+        const parametersButton = document.createElement('button');
+        parametersButton.className = "parametersVolumeButtons";  // klasė, skirta vienodai stilizuot abiem apvaliesiem tracko mygtukam
+        parametersButton.textContent = 'P';
+                                      
+        // VOLUME MYGTUKAS (gal jo galų gale ir nereiks, gal bus koks slideris; nebent pavyks popupe sliderį padaryt)
+        const volumeButton = document.createElement('button');
+        volumeButton.className = "parametersVolumeButtons";
+        volumeButton.textContent = "V";
+                                      
+        // PARAMETRŲ IR VOLUME MYGTUKAI PRIDEDAMI Į JIEM SKIRTĄJĮ KONTEINERĮ
+        parametersVolumeButtonsContainer.appendChild(parametersButton);
+        parametersVolumeButtonsContainer.appendChild(volumeButton);
+        
+                                      
+        // INSTRUMENTO PASIRINKIMO DROPDOWN SĄRAŠAS
+        const selectInstrument = document.createElement('select');
+        selectInstrument.name = 'selectInstrument';
+        selectInstrument.id = 'selectInstrument';
+
+        // PRIDEDAMAS KIEKVIENAS INSTRUMENTO PASIRINKIMAS Į INSTRUMENTO PASIRINKIMO DROPDOWN SĄRAŠĄ
+        instrumentList.forEach(opt => {
+        const instrumentOption = document.createElement('option');
+        instrumentOption.value = opt.value;
+        instrumentOption.textContent = opt.text;
+        selectInstrument.appendChild(instrumentOption);
+        });
+        
+        labelBox.appendChild(label)
+        labelBox.appendChild(parametersVolumeButtonsContainer);
+        labelBox.appendChild(selectInstrument);
+        labelsDiv.appendChild(labelBox);
+                                      
+
     }
+    
 
     // NATŲ PRIDĖJIMO TRACKAN FUNKCIJA
     function addNoteToTrack(track, e) {
