@@ -37,14 +37,6 @@ body {
     border-radius: 10px 0px 0px 0px;
 }
 
-/*KAD APVALINT PIRMOSIOS PIANOROLL EILUTĖS TOP-LEFT KAMPĄ*/
-#pitchRow-1-label {
-    border-radius: 10px 0px 0px 0px;
-}
-
-#labels {
-    border-radius: 10px 0px 0px 0px;
-}
 
 /*SCROLLBARO RUOŽO STILIAI*/        
 ::-webkit-scrollbar {

@@ -3,6 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sequencer = document.getElementById('sequencer');
     const labelsDiv = document.getElementById('labels');
+
+    // Clear previous labels/tracks to prevent duplication
+    labelsDiv.innerHTML = '';
+    sequencer.innerHTML = '';
+
     const trackCount = 10;         // number of tracks
     const trackHeight = 100;       // per-track height
     const timelineWidthPx = 2500; // timeline width

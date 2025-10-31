@@ -43,22 +43,8 @@ def sequencer_page():
     <style>
         <link rel="stylesheet" href="/static/sequencer_page.css">
     </style>
-
     ''')
 
-    
-
-    
-    # čia papildomas html <body> elemento kodas. Konkrečiai čia yra viskas, kas apima patį sequencerį (ta trackų "dėžė"). Kol kas, šio html kodo sudėtis tokia:
-    # 1. html kodas, sukuriantis viso sequencerio elementą, taip pat ir atskirus jo elementus:
-    #       1. trackų labelių bendras elementas (id = "labels"; trackų labeliai — kairėje nuo pačių trackų);  
-    #       2. trackų bendras elementas (id = "sequencer-container").
-    # 2. <script> elemente esantis JavaScript kodas. Jis (kol kas) apima šiuos dalykus:
-    #       1. Sukuria atskirus trackus ir jų labelius;
-    #       2. Sukuria natų pridėjimo (spustelėjus pele) funkciją  (toje pačioje JS "addNoteToTrack" funkcijoje yra ir natų šalinimo funkcija (su right-click));
-    #       3. Sukuria natų stumdymo track'e funkciją;
-    #       4. Sukuria natų ilginimo (tampymo) funkciją (nors tamposi tik iš dešinės pusės, bet, manau, to pakanka);
-    #       5. Sukuria esamų natų duomenų perdavimo backend'ui funkciją (nors galimai dar ji tobulintina, pvz., keičiant natos vietą/ilgį, duomenys imami žiauriai dažnai, kas gal nlb gerai)
     sequencerKodas = ui.add_body_html("""
 
     <!-- flex-direction:row padaro, kad labelų ir sequencerio dalys rikiuotųsi eilute, ne stulpeliu (ne vertikaliai viens po kitu); justify-content:center padaro, kad visa labelų ir sequencerio visuma būtų horizontaliai vidury, o ne kairėj ar dar kur -->
@@ -74,18 +60,8 @@ def sequencer_page():
         </div>
     </div>
                                                                      
-
-    <script src="/static/sequencer_page.js"></script>
-
-                                    
+    <script src="/static/sequencer_page.js"></script>                                  
     """)
-
-
-
-
-
-
-
 
 
 
@@ -103,7 +79,6 @@ def pianoroll_page(track: int):
     <style>
         <link rel="stylesheet" href="/static/pianoroll_page.css">
     </style>
-
     ''')
 
 
@@ -122,18 +97,8 @@ def pianoroll_page(track: int):
         </div>
     </div>
                                                                      
-
-    <script src="/static/pianoroll_page.js"></script>
-
-                                    
+    <script src="/static/pianoroll_page.js"></script>                               
     """)
-
-
-
-
-
-
-
 
 
 
