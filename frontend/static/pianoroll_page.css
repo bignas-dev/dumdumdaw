@@ -1,0 +1,51 @@
+/*VISO HTML <BODY> ELEMENTO STILIAI*/             
+body {
+    background-color: #344966;
+    font-family: "Century Gothic";
+}
+
+
+                
+/*NATOS BLOKELIO STILIAI*/
+.note {
+    position: absolute;
+    height: 15px;
+    background: #2ecc71;
+    border: 1px solid #27ae60;
+    cursor: move;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+                
+/*NATOS BLOKELIO "RANKENOS" (kairėje) STILIAI*/
+.note-handle {
+    width: 8px;
+    height: 100%;
+    background: #27ae60;
+    cursor: ew-resize;
+    border-left: 1px solid rgba(0,0,0,0.15);
+}
+
+
+
+/*SCROLLBARO RUOŽO STILIAI*/        
+::-webkit-scrollbar {
+    background: #202020;
+    border-radius: 0px 0px 10px 0px;
+}
+
+/*SCROLLBARO "RANKENOS" STILIAI*/        
+::-webkit-scrollbar-thumb {
+    background: #e6aace;
+    border-radius: 10px;
+    border: 3px solid #202020;
+    
+}
+
+/*SCROLLBARO "RANKENOS" STILIAI, KAI ANT JOS LAIKOMAS CURSORIUS*/       
+::-webkit-scrollbar-thumb:hover {
+    background: #ffffff; 
+}

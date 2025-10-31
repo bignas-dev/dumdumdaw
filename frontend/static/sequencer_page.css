@@ -1,0 +1,88 @@
+/*VISO HTML <BODY> ELEMENTO STILIAI*/             
+body {
+    background-color: #344966;
+    font-family: "Century Gothic";
+}
+
+
+                
+/*NATOS BLOKELIO STILIAI*/
+.note {
+    position: absolute;
+    height: 80px;
+    background: #2ecc71;
+    border: 1px solid #27ae60;
+    cursor: move;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+                
+/*NATOS BLOKELIO "RANKENOS" (kairėje) STILIAI*/
+.note-handle {
+    width: 8px;
+    height: 100%;
+    background: #27ae60;
+    cursor: ew-resize;
+    border-left: 1px solid rgba(0,0,0,0.15);
+}
+
+/*TRACK 1 LABEL LANGELIO STILIAI (kad apvalint jo top-left kampą)*/
+#track-1-label {
+    border-radius: 10px 0px 0px 0px;
+}
+#track-1-box {
+    border-radius: 10px 0px 0px 0px;
+}
+
+/*KAD APVALINT PIRMOSIOS PIANOROLL EILUTĖS TOP-LEFT KAMPĄ*/
+#pitchRow-1-label {
+    border-radius: 10px 0px 0px 0px;
+}
+
+#labels {
+    border-radius: 10px 0px 0px 0px;
+}
+
+/*SCROLLBARO RUOŽO STILIAI*/        
+::-webkit-scrollbar {
+    background: #202020;
+    border-radius: 0px 0px 10px 0px;
+}
+
+/*SCROLLBARO "RANKENOS" STILIAI*/        
+::-webkit-scrollbar-thumb {
+    background: #e6aace;
+    border-radius: 10px;
+    border: 3px solid #202020;
+    
+}
+
+/*SCROLLBARO "RANKENOS" STILIAI, KAI ANT JOS LAIKOMAS CURSORIUS*/       
+::-webkit-scrollbar-thumb:hover {
+    background: #ffffff; 
+}
+
+/*TRACKŲ PLAY IR VOLUME MYGTUKŲ BENDRI STILIAI*/
+.parametersVolumeButtons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e6aace;
+    border: none;
+    color: white;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    font-size: 16px;
+    margin: 4px 2px;
+}
+
+/*TRACKŲ INSTRUMENTO PASIRINKIMO DROPDOWN-LIST MYGTUKO STILIAI*/
+#selectInstrument {
+    background-color: white;
+    color: black;
+    border-radius: 10px;
+}
