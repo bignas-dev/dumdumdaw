@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-
+    const sequencerContainer = document.getElementById("sequencer-container");
     const sequencer = document.getElementById('sequencer');
     const labelsDiv = document.getElementById('labels');
 
@@ -10,13 +10,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const trackCount = 10;         // number of tracks
     const trackHeight = 100;       // per-track height
-    const timelineWidthPx = 2500; // timeline width
+    const timelineWidthPx = 5000; // timeline width
     const gridSize = 10;        // grid'o plotis (pikseliais) = minimalus natos elemento ilgis = minimalus natos elemento pastūmimo kelias
     let trackNotes = {};          // per-track note data
     let noteCounter = 0;        // pradinis natų skaičius (0)
 
-    // NUSTATOMAS VISO SEQUENCER ELEMENTO AUKŠTIS (priklauso nuo trackų skaičiaus)
-    sequencer.style.height = (trackCount * trackHeight) + 'px';
+    //let tracksInstruments = {}; // trackui parinktų instrumentų duomenys
+
+
+    sequencer.style.height = (trackCount * trackHeight) + 'px';                 // NUSTATOMAS VISO SEQUENCER ELEMENTO AUKŠTIS (priklauso nuo trackų skaičiaus)
+    sequencerContainer.style.height = (trackCount * trackHeight) + 15 + 'px';   // BE ŠITO APIBRĖŽIMO, BENDRAI TRACK EILIŲ MATOSI TIK TIEK PIKSELIŲ, KIEK YRA NUSTATYTA VISO SEQUENCER MATOMAM SCROLL LANGE (pvz., 550px), O NE VISI (pvz., 1000px=10*100) 
+    labelsDiv.style.height = (trackCount * trackHeight) + 15 + 'px';            // BE ŠITO APIBRĖŽIMO, LABELSDIV ELEMENTO AUKŠTIS KAŽKODĖL PATS SUMAŽĖJA (KIEKVIENAS LABEL BOX UŽIMA 95,8PX, O NE 100PX), TAMPA NELYGUS TRACK EILUČIŲ AUKŠČIUI. Čia aiškiai apibrėžiam, kad labelsDiv (html id="labels") aukštis yra 1000px (100*10)
+    
 
     // APIBRĖŽIAMAS DAW'O INSTRUMENTŲ SĄRAŠAS
     const instrumentList = [
@@ -42,7 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
         track.style.background = (i % 2 === 0) ? '#0d1821' : '#142532';     // tracko fono spalva (dvi spalvos, nes kas antras trackas yra tamsesnis, kas antras yra šviesesnis)
         track.style.borderBottom = '1px solid #333';
         sequencer.appendChild(track);
-        trackNotes[i] = [];
+        trackNotes[i] = []; // paruošia vietą i-tojo tracko natoms trackNotes sąraše
+        //tracksInstruments[i] = [];
         track.addEventListener('dblclick', e => addNoteToTrack(track, e));
 
         // LABELAI (kairėje) ATSKIRAI
@@ -80,9 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const trackId = i + 1;
             const response = await fetch(`/api/get-pianoroll-url?track=${trackId}`);
             const data = await response.json();
+            //tracksInstruments[trackId].push({value: selectInstrument.value, name: selectInstrument.options[selectInstrument.selectedIndex].text});
             window.open(data.url, '_blank'); // opens new tab with pianoroll
         });
-        
                                         
         // VOLUME MYGTUKAS (gal jo galų gale ir nereiks, gal bus koks slideris; nebent pavyks popupe sliderį padaryt)
         const volumeButton = document.createElement('button');
@@ -145,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         sequencer.appendChild(note);
-        trackNotes[trackId].push({id: note.id, start: left, duration: width});
+        trackNotes[trackId].push({id: note.id, start: left, duration: width}); // talpina konkrečiame tracke patalpinto elemento duomenis trackNotes sąrašan
 
         makeDraggable(note, trackId);
         makeResizable(note, handle, trackId);
@@ -203,6 +209,14 @@ document.addEventListener('DOMContentLoaded', () => {
             document.addEventListener('mouseup', mouseUpHandler);
         });
     }
+    /*    
+    function sendChosenTrackInstruments() {
+        fetch('/tracks_instruments', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(tracksInstruments)
+        }).catch(err => console.warn('Backend sync failed:', err));
+    }*/
 
     // NATŲ DUOMENŲ SIUNTIMO BACKENDAN FUNKCIJA (galimai tobulintina)
     function sendAllNotesToBackend() {

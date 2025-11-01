@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-
+    const sequencerContainer = document.getElementById("sequencer-container");
     const sequencer = document.getElementById('sequencer');
     const labelsDiv = document.getElementById('labels');
 
@@ -10,15 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const trackCount = 96;         // number of tracks
     const trackHeight = 20;       // per-track height
-    const timelineWidthPx = 2500; // timeline width
+    const timelineWidthPx = 5000; // timeline width
     const gridSize = 10;
     let trackNotes = {};          // per-track note data
     let noteCounter = 0;
 
-    // NUSTATOMAS VISO SEQUENCER ELEMENTO AUKŠTIS (priklauso nuo trackų skaičiaus)
-    sequencer.style.height = (trackCount * trackHeight) + 'px';
-
-                            
+    sequencer.style.height = (trackCount * trackHeight) + 'px';                 // NUSTATOMAS VISO PIANOROLL ELEMENTO AUKŠTIS (priklauso nuo trackų skaičiaus)
+    sequencerContainer.style.height = (trackCount * trackHeight) + 15 + "px";   // BE ŠITO APIBRĖŽIMO, BENDRAI PIANOROLL EILIŲ MATOSI TIK TIEK AUKŠČIO, KIEK YRA JO NUSTATYTA VISO PIANOROLL MATOMAM SCROLL LANGE (pvz., 550px), O NE VISAS (pvz., 1920px=96*20) 
+    labelsDiv.style.height = (trackCount * trackHeight) + 15 + "px";            // BE ŠITO APIBRĖŽIMO, LABELSDIV ELEMENTO AUKŠTIS KAŽKODĖL PATS SUMAŽĖJA (KIEKVIENAS LABEL BOX UŽIMA 95,8PX, O NE 100PX), TAMPA NELYGUS TRACK EILUČIŲ AUKŠČIUI. Čia aiškiai apibrėžiam, kad labelsDiv (html id="labels") aukštis yra 1000px (100*10)          
 
     // CREATE TRACKS AND LABELS (LABEL - KVADRAČIUKAS KAIRĖJE PRIE PATIES TRACKO, TEN KUR PVZ. "TRACK 1")
     for (let i = 0; i < trackCount; i++) {

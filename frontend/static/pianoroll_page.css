@@ -33,16 +33,21 @@ body {
 #pitchRow-1-label {
     border-radius: 10px 0px 0px 0px;
 }
-
 #labels {
     border-radius: 10px 0px 0px 10px;
 }
 
+#sequencer-container::-webkit-scrollbar {
+    border-radius: 0;
+}
+
+#whole-pianoroll-container::-webkit-scrollbar {
+    border-radius: 0px 10px 10px 0px;
+}
 
 /*SCROLLBARO RUOŽO STILIAI*/        
 ::-webkit-scrollbar {
     background: #202020;
-    border-radius: 0px 0px 10px 0px;
 }
 
 /*SCROLLBARO "RANKENOS" STILIAI*/        

@@ -38,10 +38,19 @@ body {
 }
 
 
+#sequencer-container::-webkit-scrollbar {
+    border-radius: 0;
+}
+
+#whole-sequencer-container::-webkit-scrollbar {
+    border-radius: 0px 10px 10px 0px;
+}
+
 /*SCROLLBARO RUOŽO STILIAI*/        
 ::-webkit-scrollbar {
     background: #202020;
-    border-radius: 0px 0px 10px 0px;
+    width: 15px;    /*apibrėžiam, kad bent webkit browseriuos scrollbar plotis būtų 15px*/
+    height: 15px;   /*tas pats, tik aukščiui (horizontaliem scrollbaram)*/
 }
 
 /*SCROLLBARO "RANKENOS" STILIAI*/        

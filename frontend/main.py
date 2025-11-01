@@ -47,18 +47,20 @@ def sequencer_page():
 
     sequencerKodas = ui.add_body_html("""
 
-    <!-- flex-direction:row padaro, kad labelų ir sequencerio dalys rikiuotųsi eilute, ne stulpeliu (ne vertikaliai viens po kitu); justify-content:center padaro, kad visa labelų ir sequencerio visuma būtų horizontaliai vidury, o ne kairėj ar dar kur -->
-    <div style="display:flex; flex-direction:row; justify-content:center; margin-top: 50px;">
-        <!-- LEFT LABELS (BENDRAI VISI LABELAI) -->
-        <div id="labels" style="display:flex; flex-direction:column; width: 170px; background:#202020; color:#eee; font-family:Century Gothic; border-radius:10px 0px 0px 10px;">
+        <!-- flex-direction:row padaro, kad labelų ir sequencerio dalys rikiuotųsi eilute, ne stulpeliu (ne vertikaliai viens po kitu); justify-content:center padaro, kad visa labelų ir sequencerio visuma būtų horizontaliai vidury, o ne kairėj ar dar kur -->
+        <!-- HEIGHT APRIBOJA TAI, KIEK SEQUENCERIO AUKŠČIO MATOM (LANGO AUKŠTIS);  OVERFLOW-Y:AUTO NUMATO SCROLL FUNKCIJĄ SEQUENCERIUI;  NUSTATOM BACKGROUND SPALVĄ #202020, KAD NESIMATYTŲ TARPO TARP SEQUENCER LANGO IR JO SCROLLBARO, JEIGU SCROLLBARAS NELYGUS 15PX (JEIGU KOKS BROWSERIS NEKLAUSO MŪSŲ 15PX SCROLLBAR WIDTH/HEIGHT NUSTATYMO) -->
+        <!-- width = 1070px, nes 170(labelai)+900(trackų matomoji dalis). Į scrollbaro plotį (15px) atsižvelgt nebūtina, tai dėl to ne 1085. -->
+        <div id="whole-sequencer-container" style="display:flex; flex-direction:row; justify-content:center; margin-top: 50px !important; height: 550px; overflow-y:auto; width: 1070px; margin: auto; border-radius: 10px 0px 0px 10px;">
+            <!-- LEFT LABELS (BENDRAI VISI LABELAI) -->
+            <div id="labels" style="display:flex; flex-direction:column; width: 170px; background:#202020; color:#eee; font-family:Century Gothic; border-radius:10px 0px 0px 10px;"></div>
+
+            <!-- MAIN SEQUENCER CONTAINER (BENDRAI VISŲ TRACKŲ SKILTIS) ||| OVERFLOW-Y:HIDDEN NELEIDŽIA SEQUENCER-CONTAINER ELEMENTUI SUSIKURT SAVO PATIES SCROLLO, MUM JO NEREIKIA, MUM REIKIA, KAD SEQUENCERIO TRACKŲ LABELAI IR PATYS TRACKAI JUDĖTŲ KARTU! -->
+            <div id="sequencer-container" style="width:900px; overflow-x:auto; overflow-y: hidden; padding-bottom:10px;">
+                <!-- VISAS SEQUENCERIS (IR TA DALIS, KURI NESIMATO SEQUENCERIO LANGE) -->
+                <div id="sequencer" style="width:2500px; background:#111; position:relative;"></div>
+            </div>
         </div>
 
-        <!-- MAIN SEQUENCER CONTAINER (BENDRAI VISŲ TRACKŲ SKILTIS) -->
-        <div id="sequencer-container" style="width:900px; overflow-x:auto; border-radius:0px 10px 10px 0px;">
-            <!-- VISAS SEQUENCERIS (IR TA DALIS, KURI NESIMATO SEQUENCERIO LANGE) -->
-            <div id="sequencer" style="width:2500px; background:#111; position:relative;"></div>
-        </div>
-    </div>
                                                                      
     <script src="/static/sequencer_page.js"></script>                                  
     """)
@@ -85,13 +87,15 @@ def pianoroll_page(track: int):
     pianorollKodas = ui.add_body_html("""
 
     <!-- flex-direction:row padaro, kad labelų ir sequencerio dalys rikiuotųsi eilute, ne stulpeliu (ne vertikaliai viens po kitu); justify-content:center padaro, kad visa labelų ir sequencerio visuma būtų horizontaliai vidury, o ne kairėj ar dar kur -->
-    <div style="display:flex; flex-direction:row; justify-content:center; margin-top: 50px;">
+    <!-- HEIGHT APRIBOJA TAI, KIEK PIANOROLLO AUKŠČIO MATOM (LANGO AUKŠTIS);  OVERFLOW-Y:AUTO NUMATO SCROLL FUNKCIJĄ PIANOROLLUI;  NUSTATOM BACKGROUND SPALVĄ #202020, KAD NESIMATYTŲ TARPO TARP PIANOROLL LANGO IR JO SCROLLBARO, JEIGU SCROLLBARAS NELYGUS 15PX (JEIGU KOKS BROWSERIS NEKLAUSO MŪSŲ 15PX SCROLLBAR WIDTH/HEIGHT NUSTATYMO) -->
+    <!-- width = 950px, nes 50(labelai)+900(natų eilių matomoji dalis). Į scrollbaro plotį (15px) atsižvelgt nebūtina, tai dėl to ne 965. -->
+    <div id="whole-pianoroll-container" style="display:flex; flex-direction:row; justify-content:center; margin-top: 50px !important; height: 550px; overflow-y:auto; width: 950px; margin: auto; border-radius: 10px 0px 0px 10px;">
         <!-- LEFT LABELS (BENDRAI VISI LABELAI) -->
         <div id="labels" style="display:flex; flex-direction:column; width: 50px; background:#202020; color:#eee; font-family:Century Gothic;">
         </div>
 
-        <!-- MAIN SEQUENCER CONTAINER (BENDRAI VISŲ TRACKŲ SKILTIS) -->
-        <div id="sequencer-container" style="width:900px; overflow-x:auto; border-radius:0px 10px 10px 0px;">
+        <!-- MAIN SEQUENCER CONTAINER (BENDRAI VISŲ TRACKŲ SKILTIS) ||| OVERFLOW-Y:HIDDEN NELEIDŽIA SEQUENCER-CONTAINER ELEMENTUI SUSIKURT SAVO PATIES SCROLLO, MUM JO NEREIKIA, MUM REIKIA, KAD PIANOROLL EILUČIŲ LABELAI IR PAČIOS EILUTĖS JUDĖTŲ KARTU! -->
+        <div id="sequencer-container" style="width:900px; overflow-x:auto; overflow-y:hidden;">
             <!-- VISAS SEQUENCERIS (IR TA DALIS, KURI NESIMATO SEQUENCERIO LANGE) -->
             <div id="sequencer" style="width:2500px; background:#111; position:relative;"></div>
         </div>
