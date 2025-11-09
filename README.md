@@ -1,35 +1,80 @@
-# MUSU PROJEKTO PAVADINIMAS
+# MEILIU & CO.
 
-Kolkas padariau labai mini prototipa, nes nevisiskai suprantu, kokia butent **DAW** vieta mes darom. (Viso mes jo padaryti negalim)
+Vytenis.
 
-## Kaip paleisti sita dalykeli?
+## TO-DO List
 
-### Metodas 1 (Sudetingas, bet butinas metodas, norint bendrai dirbti ant projekto)
+- [ ] Make a TO-DO list
 
-1. Instaliuokite git (Labai reikalingas irankis, nors gali buti sudetingas naudoti ir paziurekit tutoriala, kaip naudoti) [git](https://git-scm.com/downloads)
+## BACKENDAS
 
-2. Susiekite git su github'o paskyra (Pas mane ant linux as naudoju `gh` GitHub'o command line iranki, ant windowsu nezinau, siulau su SSH raktus naudojant susieti, yra tutorialu ant YT)
+Backendas grąžina .wav muzikos failą pagal pateiktus kriterijus.  
+Minimalus veiksnumas – vienas endpointas **POST** `/get_music`.
 
-3. Atidarykite console, nueikite norima folderi ir iterpkite `git clone https://github.com/adomas457/Meilus-Co-Sound.git`
+### Backendo dokumentacija
 
-4. Turetu sukurti `Meilus-Co-Sound` folderi, nueikite ir atidarykite ant broswerio `index.html`
+#### Paleidimas
 
-### Metodas 2 (Paprastas, bet tik perziurai)
+```bash
+uv sync
+uv run backend/main.py
+```
 
-1. Paspauskite nuoroda [projektas](https://github.com/adomas457/Meilus-Co-Sound/archive/refs/heads/main.zip) ir atsisiuskite faila
+#### Endpointas
 
-2. Extractinkit faila, nueikite i `Meilus-Co-Sound` folderi, nueikite ir atidarykite ant broswerio `index.html`
+- **URL:** `http://127.0.0.1:6767/get_music`
+- **Metodas:** `POST`
+- **Payload:** JSON masyvas, tipas `list[tuple[str, str, float, float]]`
 
-------
+```json
+[
+  ["instrument", "note", start, length],
+  ["instrument", "note", start, length],
+  ...
+]
+```
 
-## TO-DO Listas frontendui
-- [ ] Ismokti naudotis `git` ir Github'u
-- [ ] Sukurti dizaina pagrindinio puslapio
-- [ ] Pasirinkti frameworka, istikinti, kad yra imanoma per ji padaryti saita (nes garsus reiks grot / issaugot ir pns. gali ne visi palaikyt) ir paskaityti dokumentacija 
-- [ ] Naudodami bet koki frameworka sudeliokite elementus, kaip dizaine (Nebutina, kad patraukliai atrodytu, tik kad visi mygtukai, uzrasai (labels) ir t.t. butu vietose) 
-- [ ] Padaryk, kad kai paspaudi mygtuka (ir kitomis, jei yra salygomis, kada reikia backendo paslaugu - pateikti muzika), reikalinga informacija yra returninama (kolkas tsg mapped dicta)
+| Laukas      | Tipas   | Aprašymas |
+|-------------|---------|-----------|
+| `instrument`| `str`   | Instrumento pavadinimas. Tinka subfolderiams `backend/samples`. Galimi pavadinimai: `bass-electric`, `bassoon`, `cello`, `clarinet`, `contrabass`, `flute`, `french-horn`, `guitar-acoustic`, `guitar-electric`, `guitar-nylon`, `harmonium`, `harp`, `organ`, `piano`, `saxophone`, `trombone`, `trumpet`, `tuba`, `violin`, `xylophone`. |
+| `note`      | `str`   | Nata, pvz. `"B4"`, `"C2"` – ne visi instrumentai turi visas natų rinkinius. |
+| `start`     | `float` | Pradžios laikas **ms** (kada nata pradeda groti). |
+| `length`    | `float` | Trukmė **ms** (kiek laiko nata groja). |
 
-Kol kas tiek, nes tada jum reiktu jau backendo paslaugu
+**Atsakymas:** .wav failas su sugeneruota muzika.
 
-## TO-DO Listas backendui
-- [ ] Palaukt, kol frontendas pabaigts
+### Pavyzdys – Python kodas, kuris išsaugo sugeneruotą .wav failą
+
+```python
+import json
+import requests
+
+# 1️⃣  Endpointas
+url = "http://127.0.0.1:6767/get_music"
+
+# 2️⃣  Duomenys (toks pat kaip curl pavyzdyje)
+payload = [
+    ["cello", "B4", 1000, 2000],
+    ["saxophone", "B4", 1400, 1000]
+]
+
+# 3️⃣  Siunčiame POST užklausą, transliuojame atsakymą
+response = requests.post(
+    url,
+    data=json.dumps(payload),   # Python sąrašas → JSON eilutė
+    stream=True                 # svarbu dideliems binariniams failams
+)
+
+# 4️⃣  Patikriname, ar viskas gerai
+response.raise_for_status()    # iškelia išimtį, jei statusas ne 2xx
+
+# 5️⃣  Įrašome WAV duomenis į failą
+with open("output.wav", "wb") as f:
+    for chunk in response.iter_content(chunk_size=8192):
+        if chunk:                # praleidžiame „keep‑alive“ tuščius chunkus
+            f.write(chunk)
+
+print("✅ WAV failas išsaugotas kaip output.wav")
+```
+
+> **Pastaba:** Prieš vykdant šį kodą įsitikinkite, kad backendas veikia (`uv run backend/main.py`).
