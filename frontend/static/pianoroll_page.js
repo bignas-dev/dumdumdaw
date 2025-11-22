@@ -206,6 +206,81 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
+    // vvv PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS vvv
+
+    let playhead = null;
+    let isPlaying = false;
+    let startTimestamp = null; // laiko momentas, kai buvo pradėtas grojimas
+    let pauseOffset = 0;        // how far into the track we've played (ms)
+    let pixelsPerMs = 0.2;      // adjust depending on zoom / scale
+    let totalDuration = 60000;  // full sequencer length in ms (override later)=(GALIMAS PAKEIST, PVZ., PAGAL PASKUTINIO TRACKUOSE ESANČIO NATŲ BLOCKO PABAIGĄ!)
+
+    // kad, tik užkrovus puslapį, js kintamajam playhead būtų priskirtas playback html elementas (jo id "playback")
+    /*document.addEventListener("DOMContentLoaded", () => {*/
+    playhead = document.getElementById("playhead");
+    /*});*/
+
+    function updatePlayhead(timestamp) {
+        if (!isPlaying) return;
+
+        if (!startTimestamp) {
+            startTimestamp = timestamp;
+        }
+
+        const elapsed = timestamp - startTimestamp + pauseOffset;  
+        const x = elapsed * pixelsPerMs;
+
+        playhead.style.transform = `translateX(${x}px)`;
+
+        if (elapsed < totalDuration) {
+            requestAnimationFrame(updatePlayhead);
+        } else {
+            stopPlayback(); // jeigu pasiekė totalDuration pabaigą
+        }
+    }
+
+    function playPlayback() {
+        if (isPlaying) return;
+        isPlaying = true;
+        startTimestamp = null;  // reset internal timer, but NOT pauseOffset
+
+        requestAnimationFrame(updatePlayhead);
+    }
+
+    function pausePlayback() {
+        if (!isPlaying) return; // jeigu negroja, tai šios funkcijos ir nevykdyt
+        isPlaying = false;
+        const currentTime = performance.now(); // paimamas laikas, praėjęs nuo apskritai pradžios (nuo puslapio pakrovimo pradžios?)
+        // čia kad nevykdytų skaičiavimų ant null
+        if (startTimestamp !== null) {
+            pauseOffset += currentTime - startTimestamp;
+        }
+    }
+
+    function stopPlayback() {
+        isPlaying = false;
+        pauseOffset = 0;
+        startTimestamp = null;
+        playhead.style.transform = `translateX(0px)`;
+    }
+
+    const playButton = document.getElementById("playButton");
+    const pauseButton = document.getElementById("pauseButton");
+    const returnButton = document.getElementById("returnButton");
+
+    if (playButton) playButton.addEventListener('click', playPlayback);
+    if (pauseButton) pauseButton.addEventListener('click', pausePlayback);
+    if (returnButton) returnButton.addEventListener('click', stopPlayback);
+
+    sequencerContainer.addEventListener("scroll", () => {
+        const offset = sequencerContainer.scrollLeft;
+        playhead.style.left = `${-offset}px`;
+    });
+
+
+
+
     // NATŲ DUOMENŲ SIUNTIMO BACKENDAN FUNKCIJA (galimai tobulintina)
     function sendAllNotesToBackend() {
         fetch('/update_tracks', {
