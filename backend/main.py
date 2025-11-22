@@ -8,42 +8,43 @@ import tempfile
 import shutil
 from pathlib import Path
 
-app = FastAPI(title="DAW Audio Renderer")
-
 SAMPLE_RATE = 44100
 SAMPLES_DIR = Path(__file__).parent / "samples"
 MAX_DURATION = 1_000_000
 
+app = FastAPI(title="DAW Audio Renderer")
 
-@app.post("/get_music", response_class=FileResponse)
-async def get_music(
+
+def generate_music(
     sequence: list[tuple[str, str, float, float]],
 ):
     if not sequence:
-        raise HTTPException(status_code=400, detail="Sequence is empty")
+        raise HTTPException(status_code=400, detail="Empty sequence")
 
     max_end = 0
     validated_sequence = []
-    for inst, note, start, length in sequence:
-        if start < 0 or length <= 0:
+    for inst, note, start, end in sequence:
+        if start < 0 or end <= 0 or end <= start:
             raise HTTPException(
-                status_code=400, detail=f"Invalid start/length: {start}, {length}"
+                status_code=400, detail=f"Invalid timing: start={start}, end={end}"
             )
-        end = start + length
+
         if end > MAX_DURATION:
             raise HTTPException(
-                status_code=400, detail=f"Audio too long (> {MAX_DURATION}s)"
+                status_code=400,
+                detail=f"Audio too long: {end}ms exceeds max {MAX_DURATION}ms",
             )
+
         max_end = max(max_end, end)
 
         sample_path = SAMPLES_DIR / inst / f"{note}.wav"
 
         if not sample_path.exists():
             raise HTTPException(
-                status_code=404, detail=f"Sample not found: {sample_path}"
+                status_code=404, detail=f"Sample not found: {inst}/{note}.wav"
             )
 
-        validated_sequence.append((sample_path, start, length))
+        validated_sequence.append((sample_path, start, end - start))
 
     output = AudioSegment.silent(duration=max_end, frame_rate=SAMPLE_RATE)
 
@@ -51,14 +52,13 @@ async def get_music(
         try:
             audio = AudioSegment.from_file(sample_path)
         except CouldntDecodeError:
-            raise HTTPException(status_code=500, detail=f"Cannot decode: {sample_path}")
+            raise HTTPException(status_code=500, detail="Audio decoding failed")
 
         if audio.frame_rate != SAMPLE_RATE:
             audio = audio.set_frame_rate(SAMPLE_RATE)
 
         if len(audio) > length:
             audio = audio[:length]
-
         elif len(audio) < length:
             repeats = int(np.ceil(length / len(audio)))
             audio = (audio * repeats)[:length]
@@ -66,15 +66,83 @@ async def get_music(
         output = output.overlay(audio, position=start)
 
     temp_dir = Path(tempfile.mkdtemp())
-    output_path = temp_dir / "return.wav"
+    output_path = temp_dir / "music.wav"
     output.export(output_path, format="wav")
 
     return FileResponse(
         path=output_path,
         media_type="audio/wav",
-        filename="return.wav",
+        filename="music.wav",
         background=BackgroundTask(shutil.rmtree, temp_dir),
     )
+
+
+blocks = {}
+main = []
+
+
+@app.post("/get_note", response_class=FileResponse)
+def get_note(instrument: str, note: str):
+    return generate_music([(instrument, note, 0, 500)])
+
+
+@app.post("/save_block")
+def save_block(
+    name: str,
+    sequence: list[tuple[str, str, float, float]],
+):
+    global blocks
+    blocks[name] = sequence
+    return {"status": "saved"}
+
+
+@app.get("/get_block")
+def get_block(name: str):
+    if name not in blocks:
+        raise HTTPException(status_code=404, detail=f"Block '{name}' not found")
+    return blocks[name]
+
+
+@app.post("/play_block", response_class=FileResponse)
+def play_block(name: str):
+    if name not in blocks:
+        raise HTTPException(status_code=404, detail=f"Block '{name}' not found")
+    return generate_music(blocks[name])
+
+
+@app.post("/save_main")
+def save_main(
+    sequence: list[tuple[str, float, float]],
+):
+    global main
+    main = sequence
+    return {"status": "main saved"}
+
+
+@app.get("/get_main")
+def get_main():
+    return main
+
+
+@app.post("/play_main", response_class=FileResponse)
+def play_main():
+    for block_ref in main:
+        block_name = block_ref[0]
+        if block_name not in blocks:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Block '{block_name}' not found in main sequence",
+            )
+
+    temp_seq = []
+    for block in main:
+        for insides in blocks[block[0]]:
+            temp_seq.append(
+                [*insides[:2], insides[2] + block[1], min(insides[3], block[2])]
+            )
+
+    return generate_music(temp_seq)
+
 
 if __name__ == "__main__":
     import uvicorn
