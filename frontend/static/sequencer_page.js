@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     
+    // priskiriam JS kintamuosius esminiams html sequencerio elementams
     const sequencerContainer = document.getElementById("sequencer-container");
     const sequencer = document.getElementById('sequencer');
     const labelsDiv = document.getElementById('labels');
@@ -8,22 +9,14 @@ document.addEventListener('DOMContentLoaded', () => {
     labelsDiv.innerHTML = '';
     sequencer.innerHTML = '';
 
-    const trackCount = 10;         // number of tracks
-    const trackHeight = 100;       // per-track height
-    const timelineWidthPx = 5000; // timeline width
-    const gridSize = 10;        // grid'o plotis (pikseliais) = minimalus natos elemento ilgis = minimalus natos elemento pastūmimo kelias
-    let trackNotes = {};          // per-track note data
-    let noteCounter = 0;        // pradinis natų skaičius (0)
-
-    //let tracksInstruments = {}; // trackui parinktų instrumentų duomenys
+    // Natų-blokų duomenų rinkimo kintamieji (KURIANT BACKENDĄ, GALI REIKT ŠIUOS KINTAMUOSIUS PAKEIST) {BACKEND}
+    let trackNotes = {};            // per-track note data
+    let noteCounter = 0;            // pradinis natų-blokų skaičius (0)
 
 
-    sequencer.style.height = (trackCount * trackHeight) + 'px';                 // NUSTATOMAS VISO SEQUENCER ELEMENTO AUKŠTIS (priklauso nuo trackų skaičiaus)
-    sequencerContainer.style.height = (trackCount * trackHeight) + 15 + 'px';   // BE ŠITO APIBRĖŽIMO, BENDRAI TRACK EILIŲ MATOSI TIK TIEK PIKSELIŲ, KIEK YRA NUSTATYTA VISO SEQUENCER MATOMAM SCROLL LANGE (pvz., 550px), O NE VISI (pvz., 1000px=10*100) 
-    labelsDiv.style.height = (trackCount * trackHeight) + 15 + 'px';            // BE ŠITO APIBRĖŽIMO, LABELSDIV ELEMENTO AUKŠTIS KAŽKODĖL PATS SUMAŽĖJA (KIEKVIENAS LABEL BOX UŽIMA 95,8PX, O NE 100PX), TAMPA NELYGUS TRACK EILUČIŲ AUKŠČIUI. Čia aiškiai apibrėžiam, kad labelsDiv (html id="labels") aukštis yra 1000px (100*10)
-    
+    // ========== INSTRUMENTŲ DALIS ==========
 
-    // APIBRĖŽIAMAS DAW'O INSTRUMENTŲ SĄRAŠAS
+    // APIBRĖŽIAMAS DAW'O INSTRUMENTŲ SĄRAŠAS {BACKEND}
     const instrumentList = [
             {value: "", text: "Choose instrument"},
             {value: "piano", text: "Piano"},
@@ -31,11 +24,29 @@ document.addEventListener('DOMContentLoaded', () => {
             {value: "drums", text: "Drums"},
             {value: "organ", text: "Organ"},
             {value: "synth", text: "Synth"},
-    ];                                  
+    ];             
+    //let tracksInstruments = {}; // trackui parinktų instrumentų duomenys
 
-    // CREATE TRACKS AND LABELS (LABEL - KVADRAČIUKAS KAIRĖJE PRIE PATIES TRACKO, TEN KUR PVZ. "TRACK 1")
+
+
+    // ========================================= SEQUENCER KOMPONENTŲ DALIS =========================================
+
+    const trackCount = 10;         // number of tracks
+    const trackHeight = 100;       // per-track height
+    const timelineWidthPx = 10000; // timeline width
+    const gridSize = 10;        // grid'o plotis (pikseliais) = minimalus natos elemento ilgis = minimalus natos elemento pastūmimo kelias
+
+    // Sequencerio html elementų aukščiai
+    sequencer.style.height = (trackCount * trackHeight) + 'px';                 // NUSTATOMAS VISO SEQUENCER ELEMENTO AUKŠTIS (priklauso nuo trackų skaičiaus)
+    sequencerContainer.style.height = (trackCount * trackHeight) + 15 + 'px';   // BE ŠITO APIBRĖŽIMO, BENDRAI TRACK EILIŲ MATOSI TIK TIEK PIKSELIŲ, KIEK YRA NUSTATYTA VISO SEQUENCER MATOMAM SCROLL LANGE (pvz., 550px), O NE VISI (pvz., 1000px=10*100) 
+    labelsDiv.style.height = (trackCount * trackHeight) + 15 + 'px';            // BE ŠITO APIBRĖŽIMO, LABELSDIV ELEMENTO AUKŠTIS KAŽKODĖL PATS SUMAŽĖJA (KIEKVIENAS LABEL BOX UŽIMA 95,8PX, O NE 100PX), TAMPA NELYGUS TRACK EILUČIŲ AUKŠČIUI. Čia aiškiai apibrėžiam, kad labelsDiv (html id="labels") aukštis yra 1000px (100*10)
+                                
+
+    // ========== TRACKŲ SUKŪRIMO DALIS (didelis for loopas) ==========
+
     for (let i = 0; i < trackCount; i++) {
-        // TRACKAI ATSKIRAI
+        
+        // Trackai
         const track = document.createElement('div');
         track.className = 'track';
         track.dataset.trackId = String(i);
@@ -47,82 +58,85 @@ document.addEventListener('DOMContentLoaded', () => {
         track.style.background = (i % 2 === 0) ? '#0d1821' : '#142532';     // tracko fono spalva (dvi spalvos, nes kas antras trackas yra tamsesnis, kas antras yra šviesesnis)
         track.style.borderBottom = '1px solid #333';
         sequencer.appendChild(track);
-        trackNotes[i] = []; // paruošia vietą i-tojo tracko natoms trackNotes sąraše
-        //tracksInstruments[i] = [];
+        // (ŠITĄ LISTENERĮ GALŲ GALE REIKS PAŠALINT!!! BLOKAI KURSIS AUTOMATIŠKAI, PAGAL PIANOROLLO DUOMENIS) Double clicko event listener (po double click iškviečiama addNoteToTrack funkcija — sukuriamas blokas)
         track.addEventListener('dblclick', e => addNoteToTrack(track, e));
+        // Trackų numeracija trackNotes Objecte {'i' : [...]} {BACKEND}
+        trackNotes[i] = [];         // paruošia vietą i-tojo tracko natoms trackNotes sąraše
 
-        // LABELAI (kairėje) ATSKIRAI
+        // Labelai 
                                         
-        // TRACK LABELO ELEMENTŲ CONTAINER ('DĖŽĖ')                              
+        // Labelo elementų "konteineris" (div elementas)                             
         const labelBox = document.createElement('div');
         labelBox.setAttribute("id", "track-" + (i+1) + "-box");
         labelBox.style.height = trackHeight + 'px';
-        labelBox.style.background = '#253644';              // label langelio fono spalva
-        labelBox.style.display = 'block';                   // kad elementai viens po kitu eitų (track pavadinimas, instrumentų mygtukas turi būt viens po kitu; kiti du mygtukai bus virš instrumentų mygtuko, tai bendram jų div irgi tinka block display, nors ir patys mygtukai bus šone viens kito)
-        //labelBox.style.alignItems = 'center';
-        //labelBox.style.justifyContent = 'center';
+        labelBox.style.background = '#253644';
         labelBox.style.borderBottom = '1px solid #333';
         labelBox.style.padding = '10px 10px';
         
-        // PATS TRACK LABELAS                              
+        // Labelo pats tekstas (pvz., Track 1)                              
         const label = document.createElement('div');
         label.setAttribute("id", "track-" + (i+1) + "-label");                 // prie kiekvieno label langelio elemento prideda html ID atributą (tikslas — tokiu būdu būtų galima customizint būtent 'Track 1' label langelį, kad būtų galima jo top-left kampą padaryti apvalų (apvalint TIK bendro visų labelų elemento top-left kampą nepavyksta, nes tuo atveju tą apvalintą kampą tiesiog užstoja "Track 1" label langelis, jo nesimato; dėl to reikia apvalint IR bendro visų labelų elemento top-left kampą, IR "Track 1" label langelio top-left kampą))
         label.textContent = 'Track ' + (i + 1);
         label.style.flex = '1';
-        
-                                        
-        // PARAMETRŲ IR VOLUME MYGTUKŲ KONTEINERIS
+                                      
+        // (P)ianoroll ir (V)olume mygtukų konteineris
         const parametersVolumeButtonsContainer = document.createElement('div');
         parametersVolumeButtonsContainer.style.display = "flex";
-        //parametersVolumeButtonsContainer.style.justifyContent = "center";
                                         
-        // PARAMETRŲ MYGTUKAS
+        // Pianoroll mygtukas
         const parametersButton = document.createElement('button');
-        parametersButton.className = "parametersVolumeButtons";  // klasė, skirta vienodai stilizuot abiem apvaliesiem tracko mygtukam
+        parametersButton.className = "parametersVolumeButtons";
         parametersButton.id = "parambutton";
         parametersButton.textContent = 'P';
-        // PRIDEDAMAS FUNKCIONALUMAS, KAD PASPAUDUS P ATSIDARYS TO TRACKO PIANOROLL PUSLAPIS
+
+        // Funkcija, kad paspaudus (P)ianorollo mygtuką atsidarys to tracko pianoroll puslapis {BACKEND}
         parametersButton.addEventListener('click', async () => {
             const trackId = i + 1;
             const response = await fetch(`/api/get-pianoroll-url?track=${trackId}`);
             const data = await response.json();
-            //tracksInstruments[trackId].push({value: selectInstrument.value, name: selectInstrument.options[selectInstrument.selectedIndex].text});
-            window.open(data.url, '_blank'); // opens new tab with pianoroll
+            window.open(data.url, '_blank');        // opens new tab with pianoroll
         });
                                         
-        // VOLUME MYGTUKAS (gal jo galų gale ir nereiks, gal bus koks slideris; nebent pavyks popupe sliderį padaryt)
+        // Volume mygtukas (dar nieko nedarantis)
         const volumeButton = document.createElement('button');
         volumeButton.className = "parametersVolumeButtons";
         volumeButton.textContent = "V";
                                         
-        // PARAMETRŲ IR VOLUME MYGTUKAI PRIDEDAMI Į JIEM SKIRTĄJĮ KONTEINERĮ
+        // (P)ianoroll ir (V)olume mygtukai pridedami į jiem skirtą parent konteinerį
         parametersVolumeButtonsContainer.appendChild(parametersButton);
         parametersVolumeButtonsContainer.appendChild(volumeButton);
-        
-                                        
-        // INSTRUMENTO PASIRINKIMO DROPDOWN SĄRAŠAS
+          
+        // ===== Instrumento pasirinkimo dropdown sąrašas =====
+
+        // Pats sąrašas (html select tipo elementas)
         const selectInstrument = document.createElement('select');
         selectInstrument.name = 'selectInstrument';
         selectInstrument.id = 'selectInstrument';
 
-        // PRIDEDAMAS KIEKVIENAS INSTRUMENTO PASIRINKIMAS Į INSTRUMENTO PASIRINKIMO DROPDOWN SĄRAŠĄ
+        // Pridedamas kiekvienas instromento pasirinkimas į instrumentų pasirinkimo sąrašą {BACKEND}
         instrumentList.forEach(opt => {
         const instrumentOption = document.createElement('option');
         instrumentOption.value = opt.value;
         instrumentOption.textContent = opt.text;
         selectInstrument.appendChild(instrumentOption);
         });
-        
+
+
+        // Į bendrą parent label box konteinerį sudedami visi jo elementai, ir pats label box į visų labelų bendrą konteinerį
         labelBox.appendChild(label)
         labelBox.appendChild(parametersVolumeButtonsContainer);
         labelBox.appendChild(selectInstrument);
         labelsDiv.appendChild(labelBox);
                                         
-
     }
 
 
-    // NATŲ PRIDĖJIMO TRACKAN FUNKCIJA
+    // ============================== SEQUENCERIO ESMINIŲ FUNKCIONALUMŲ DALIS (natų-blokų dėjimas/trynimas, stumdymas, tampymas) ==============================
+    // NOTE: Galų gale blokų įdėjimo pele ir blokų tampymo funkcijos turės būti pašalintos!
+
+
+    // ========== NATŲ PRIDĖJIMO (ir trynimo) Į SEQUENCERĮ FUNKCIONALUMAS ========== (Galų gale bus pašalintas pridėjimas pele, turės atsirasti automatiškai, priklausomai nuo pianorollo signalų!)
+    
     function addNoteToTrack(track, e) {
         const rect = sequencer.getBoundingClientRect();
         let left = e.clientX - rect.left;
@@ -135,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         note.id = 'note-' + noteCounter;
         note.style.left = left + 'px';
         note.style.width = width + 'px';
-        const trackId = track.dataset.trackId;
+        const trackId = track.dataset.trackId;      // {BACKEND}
         note.style.top = (parseInt(trackId) * trackHeight + 10) + 'px';
 
         const handle = document.createElement('div');
@@ -146,21 +160,28 @@ document.addEventListener('DOMContentLoaded', () => {
         note.addEventListener('contextmenu', e => {
             e.preventDefault();
             note.remove();
+            // Po right-click ištrina tą bloką iš sequencer natų-blokų objecto (sąrašo) {BACKEND}
             trackNotes[trackId] = trackNotes[trackId].filter(n => n.id !== note.id);
             sendAllNotesToBackend();
         });
 
         sequencer.appendChild(note);
-        trackNotes[trackId].push({id: note.id, start: left, duration: width}); // talpina konkrečiame tracke patalpinto elemento duomenis trackNotes sąrašan
+
+        // Į SEQUENCERIO NATŲ-BLOKŲ OBJECTĄ (sąrašą) PRIDEDA NAUJO BLOKO DUOMENIS: ID, PRADŽIOS POZICIJA, TRUKMĖ {BACKEND} !!!!!!!!
+        trackNotes[trackId].push({id: note.id, start: left, duration: width});
 
         makeDraggable(note, trackId);
         makeResizable(note, handle, trackId);
 
+        // Incrementina natų-blokų counterį. Nors šitos funkcijos galų gale gal ir nereiks? {BACKEND}
         noteCounter++;
+
         sendAllNotesToBackend();
     }
 
-    // NATŲ STUMDYMO PELE FUNKCIJA
+
+    // ========== NATŲ-BLOKŲ STUMDYMO PELE FUNKCIJA ==========
+
     function makeDraggable(note, trackId) {
         let offsetX;
         note.addEventListener('mousedown', (e) => {
@@ -172,10 +193,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 newLeft = Math.max(0, Math.min(newLeft, timelineWidthPx - note.offsetWidth));
                 newLeft = Math.round(newLeft / gridSize) * gridSize;
                 note.style.left = newLeft + 'px';
+
+                // Sequencer sąraše suranda pastumdyto bloko ID {BACKEND}
                 const n = trackNotes[trackId].find(n => n.id === note.id);
+
+                // Pakeičia pastumdyto bloko start duomenis {BACKEND}
                 if (n) n.start = newLeft;
+
                 sendAllNotesToBackend();
+
             }
+
             function mouseUpHandler() {
                 document.removeEventListener('mousemove', mouseMoveHandler);
                 document.removeEventListener('mouseup', mouseUpHandler);
@@ -185,22 +213,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // NATŲ ILGIO KAITYMO (NATŲ TAMPYMO) PELE FUNKCIJA
+    // ========== BLOKŲ ILGIO KAITYMO (BLOKŲ TAMPYMO) PELE FUNKCIJA ========== (Ji galų gale turės būti pašalinta!!)
+
     function makeResizable(note, handle, trackId) {
+
         let startX, startWidth;
         handle.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             startX = e.clientX;
             startWidth = note.offsetWidth;
+
             function mouseMoveHandler(e) {
+
                 const delta = e.clientX - startX;
                 let newWidth = Math.max(10, startWidth + delta);
                 newWidth = Math.round(newWidth / gridSize) * gridSize;
                 note.style.width = newWidth + 'px';
+
+                // Sequencerio blokų sąraše suranda patampyto bloko ID {BACKEND}
                 const n = trackNotes[trackId].find(n => n.id === note.id);
+
+                // Pakeičia patampyto bloko duration duomenis {BACKEND}
                 if (n) n.duration = newWidth;
+
                 sendAllNotesToBackend();
+
             }
+
             function mouseUpHandler() {
                 document.removeEventListener('mousemove', mouseMoveHandler);
                 document.removeEventListener('mouseup', mouseUpHandler);
@@ -211,21 +250,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // vvv PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS vvv
+    // ============================== PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS (play, pause, stop) ==============================
+    // Playback mygtukai turėtų turėt dvi paskirtis: 1. vizualią (linijos judėjimo kaitymas);  2. grojimo (įrašo grojimas/nebegrojimas) {BACKEND}
 
-    let playhead = null;
+    let playhead = document.getElementById("playhead");
     let isPlaying = false;
-    let startTimestamp = null; // laiko momentas, kai buvo pradėtas grojimas
-    let pauseOffset = 0;        // how far into the track we've played (ms)
-    let pixelsPerMs = 0.2;      // adjust depending on zoom / scale
-    let totalDuration = 60000;  // full sequencer length in ms (override later)=(GALIMAS PAKEIST, PVZ., PAGAL PASKUTINIO TRACKUOSE ESANČIO NATŲ BLOCKO PABAIGĄ!)
+    let startTimestamp = null;                              // laiko momentas, kai buvo pradėtas grojimas
+    let pauseOffset = 0;                                    // how far into the track we've played (ms)
+    let pixelsPerMs = 0.1;                                  // Playback linijos judėjimo greitis (px/ms)
+    const totalDuration = timelineWidthPx / pixelsPerMs;    // Pilnas playback grojimo ilgis (priklauso nuo pianoroll ilgio ir judėjimo greičio). KOL KAS kintamasis yra CONST, bet jeigu padarytumėm automatinį pianorollo prasiplėtimą (kai natos artėja prie galo), tada bus LET.
 
-    // kad, tik užkrovus puslapį, js kintamajam playhead būtų priskirtas playback html elementas (jo id "playback")
-    /*document.addEventListener("DOMContentLoaded", () => {*/
-    playhead = document.getElementById("playhead");
-    /*});*/
+    // ========== LINIJOS JUDĖJIMO FUNKCIJA ==========
 
     function updatePlayhead(timestamp) {
+
         if (!isPlaying) return;
 
         if (!startTimestamp) {
@@ -244,7 +282,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ========== LINIJOS PALEIDIMO JUDĖTI FUNKCIJA (PLAY) ==========
+
     function playPlayback() {
+
         if (isPlaying) return;
         isPlaying = true;
         startTimestamp = null;  // reset internal timer, but NOT pauseOffset
@@ -252,22 +293,38 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(updatePlayhead);
     }
 
+    // ========== LINIJOS SUSTABDYMO FUNKCIJA (PAUSE) ==========
+
     function pausePlayback() {
+
         if (!isPlaying) return; // jeigu negroja, tai šios funkcijos ir nevykdyt
         isPlaying = false;
-        const currentTime = performance.now(); // paimamas laikas, praėjęs nuo apskritai pradžios (nuo puslapio pakrovimo pradžios?)
+        const currentTime = performance.now();  // paimamas laikas, praėjęs nuo apskritai pradžios (nuo puslapio pakrovimo pradžios?)
         // čia kad nevykdytų skaičiavimų ant null
         if (startTimestamp !== null) {
             pauseOffset += currentTime - startTimestamp;
         }
     }
 
+    // ========== LINIJOS SUSTABDYMO IR GRĄŽINIMO ATGAL FUNKCIJA (STOP) ==========
+
     function stopPlayback() {
+
         isPlaying = false;
         pauseOffset = 0;
         startTimestamp = null;
         playhead.style.transform = `translateX(0px)`;
+
     }
+
+    // ========== LINIJOS JUDĖJIMO SCROLLINANT (horizontaliai) SUTVARKYMAS ==========
+
+    sequencerContainer.addEventListener("scroll", () => {
+        const offset = sequencerContainer.scrollLeft;
+        playhead.style.left = `${-offset}px`;
+    });
+
+    // ========== PLAY, PAUSE, STOP MYGTUKŲ FUNKCIONALUMAS ==========
 
     const playButton = document.getElementById("playButton");
     const pauseButton = document.getElementById("pauseButton");
@@ -277,28 +334,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pauseButton) pauseButton.addEventListener('click', pausePlayback);
     if (returnButton) returnButton.addEventListener('click', stopPlayback);
 
-    sequencerContainer.addEventListener("scroll", () => {
-        const offset = sequencerContainer.scrollLeft;
-        playhead.style.left = `${-offset}px`;
-    });
     
 
+    // ============================== NATŲ-BLOKŲ DUOMENŲ SIUNTIMO BACKENDAN FUNKCIJA ==============================
+    // Šita funkcija pasikeis, nes: 1. jinai siunčia duomenis ne ten;  2. jinai siunčia dabartiniam backendui netinkamo formato duomenis (reiks trackNotes formatą pakeist) {BACKEND}
 
-    /*    
-    function sendChosenTrackInstruments() {
-        fetch('/tracks_instruments', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(tracksInstruments)
-        }).catch(err => console.warn('Backend sync failed:', err));
-    }*/
-
-    // NATŲ DUOMENŲ SIUNTIMO BACKENDAN FUNKCIJA (galimai tobulintina)
     function sendAllNotesToBackend() {
+
         fetch('/update_tracks', {
+
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(trackNotes)
+
         }).catch(err => console.warn('Backend sync failed:', err));
+
     }
+    
 });

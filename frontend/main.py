@@ -34,7 +34,7 @@ def include_static_assets(js_files=None, css_files=None):
 
 
 # set'as (duomenų rinkinys), skirtas rinkti dedamų natų duomenims (aktualu backendui):
-track_note_data = {}
+track_note_data = []
 
 @ui.page('/')
 def sequencer_page():
@@ -70,7 +70,7 @@ def sequencer_page():
         <div id="labels" style="display:flex; flex-direction:column; width: 170px; background:#202020; color:#eee; font-family:Century Gothic; border-radius:10px 0px 0px 10px;"></div>
         <!-- JEI SEQUENCER-CONTAINER BŪTŲ BE POSITION:RELATIVE, TAI PLAYBACK LINIJA IŠLĮSTŲ IŠ CONTAINERIO IR VERTIKALIAI, IR HORIZONTALIAI -->
         <div id="sequencer-container" style="width:900px; overflow-x:auto; overflow-y:hidden; padding-bottom:10px; position: relative;">
-            <div id="sequencer" style="width:2500px; background:#111; position:relative;"></div>
+            <div id="sequencer" style="width:10000px; background:#111; position:relative;"></div>
             <div id="playhead"></div>
         </div>
     </div>
@@ -113,18 +113,18 @@ def pianoroll_page(track: int):
         </div>
     </header>
                                       
-    <!-- flex-direction:row padaro, kad labelų ir sequencerio dalys rikiuotųsi eilute, ne stulpeliu (ne vertikaliai viens po kitu); justify-content:center padaro, kad visa labelų ir sequencerio visuma būtų horizontaliai vidury, o ne kairėj ar dar kur -->
+    <!-- flex-direction:row padaro, kad labelų ir pianoroll dalys rikiuotųsi eilute, ne stulpeliu (ne vertikaliai viens po kitu); justify-content:center padaro, kad visa labelų ir sequencerio visuma būtų horizontaliai vidury, o ne kairėj ar dar kur -->
     <!-- HEIGHT APRIBOJA TAI, KIEK PIANOROLLO AUKŠČIO MATOM (LANGO AUKŠTIS);  OVERFLOW-Y:AUTO NUMATO SCROLL FUNKCIJĄ PIANOROLLUI;  NUSTATOM BACKGROUND SPALVĄ #202020, KAD NESIMATYTŲ TARPO TARP PIANOROLL LANGO IR JO SCROLLBARO, JEIGU SCROLLBARAS NELYGUS 15PX (JEIGU KOKS BROWSERIS NEKLAUSO MŪSŲ 15PX SCROLLBAR WIDTH/HEIGHT NUSTATYMO) -->
     <!-- width = 950px, nes 50(labelai)+900(natų eilių matomoji dalis). Į scrollbaro plotį (15px) atsižvelgt nebūtina, tai dėl to ne 965. -->
     <div id="whole-pianoroll-container" style="display:flex; flex-direction:row; justify-content:center; margin-top: 20px !important; height: 550px; overflow-y:auto; width: 950px; margin: auto; border-radius: 10px 0px 0px 10px;">
         <!-- LEFT LABELS (BENDRAI VISI LABELAI) -->
-        <div id="labels" style="display:flex; flex-direction:column; width: 50px; background:#202020; color:#eee; font-family:Century Gothic;">
+        <div id="pitchLabels" style="display:flex; flex-direction:column; width: 50px; background:#202020; color:#eee; font-family:Century Gothic;">
         </div>
 
-        <!-- MAIN SEQUENCER CONTAINER (BENDRAI VISŲ TRACKŲ SKILTIS) ||| OVERFLOW-Y:HIDDEN NELEIDŽIA SEQUENCER-CONTAINER ELEMENTUI SUSIKURT SAVO PATIES SCROLLO, MUM JO NEREIKIA, MUM REIKIA, KAD PIANOROLL EILUČIŲ LABELAI IR PAČIOS EILUTĖS JUDĖTŲ KARTU! -->
-        <div id="sequencer-container" style="width:900px; overflow-x:auto; overflow-y:hidden; position: relative;">
-            <!-- VISAS SEQUENCERIS (IR TA DALIS, KURI NESIMATO SEQUENCERIO LANGE) -->
-            <div id="sequencer" style="width:2500px; background:#111; position:relative;"></div>
+        <!-- MAIN PIANOROLL CONTAINER (BENDRAI VISŲ TRACKŲ SKILTIS) ||| OVERFLOW-Y:HIDDEN NELEIDŽIA PIANOROLL-CONTAINER ELEMENTUI SUSIKURT SAVO PATIES SCROLLO, MUM JO NEREIKIA, MUM REIKIA, KAD PIANOROLL EILUČIŲ LABELAI IR PAČIOS EILUTĖS JUDĖTŲ KARTU! -->
+        <div id="pianoroll-container" style="width:900px; overflow-x:auto; overflow-y:hidden; position: relative;">
+            <!-- VISAS PIANOROLL (IR TA DALIS, KURI NESIMATO PIANOROLLO LANGE) -->
+            <div id="pianoroll" style="width:10000px; background:#111; position:relative;"></div>
             <div id="playhead"></div>
         </div>
     </div>
