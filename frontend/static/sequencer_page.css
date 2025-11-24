@@ -172,7 +172,7 @@ body {
 }
 
 /*TRACKŲ INSTRUMENTO PASIRINKIMO DROPDOWN-LIST MYGTUKO STILIAI*/
-#selectInstrument {
+.selectInstrument {
     background-color: white;
     color: black;
     border-radius: 10px;

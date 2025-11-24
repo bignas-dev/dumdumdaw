@@ -19,11 +19,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // APIBRĖŽIAMAS DAW'O INSTRUMENTŲ SĄRAŠAS {BACKEND}
     const instrumentList = [
             {value: "", text: "Choose instrument"},
-            {value: "piano", text: "Piano"},
+            {value: "alto-sax", text: "Alto Sax"},
+            {value: "bassoon", text: "Bassoon"},
+            {value: "flute", text: "Flute"},
             {value: "guitar", text: "Guitar"},
-            {value: "drums", text: "Drums"},
-            {value: "organ", text: "Organ"},
-            {value: "synth", text: "Synth"},
+            {value: "harp", text: "Harp"},
+            {value: "horn", text: "Horn"},
+            {value: "oboe", text: "Oboe"},
+            {value: "trombone", text: "Trombone"},
+            {value: "trumpet-c", text: "Trumpet-C"},
+            {value: "viola", text: "Viola"},
+            {value: "violin", text: "Violin"},
+            {value: "violoncello", text: "Violoncello"},
     ];             
     //let tracksInstruments = {}; // trackui parinktų instrumentų duomenys
 
@@ -49,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Trackai
         const track = document.createElement('div');
         track.className = 'track';
-        track.dataset.trackId = String(i);
+        track.dataset.trackId = String(i+1);
         track.style.position = 'absolute';
         track.style.left = '0px';
         track.style.top = (i * trackHeight) + 'px';
@@ -58,8 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
         track.style.background = (i % 2 === 0) ? '#0d1821' : '#142532';     // tracko fono spalva (dvi spalvos, nes kas antras trackas yra tamsesnis, kas antras yra šviesesnis)
         track.style.borderBottom = '1px solid #333';
         sequencer.appendChild(track);
-        // (ŠITĄ LISTENERĮ GALŲ GALE REIKS PAŠALINT!!! BLOKAI KURSIS AUTOMATIŠKAI, PAGAL PIANOROLLO DUOMENIS) Double clicko event listener (po double click iškviečiama addNoteToTrack funkcija — sukuriamas blokas)
-        track.addEventListener('dblclick', e => addNoteToTrack(track, e));
+        
+        track.addEventListener("dblclick", e => {
+            const trackId = track.dataset.trackId;
+            openPianorollForTrack(trackId);
+            
+        });
         // Trackų numeracija trackNotes Objecte {'i' : [...]} {BACKEND}
         trackNotes[i] = [];         // paruošia vietą i-tojo tracko natoms trackNotes sąraše
 
@@ -110,10 +121,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Pats sąrašas (html select tipo elementas)
         const selectInstrument = document.createElement('select');
-        selectInstrument.name = 'selectInstrument';
-        selectInstrument.id = 'selectInstrument';
+        selectInstrument.className = "selectInstrument";
+        selectInstrument.name = 'selectInstrument' + (i+1);
+        selectInstrument.id = 'selectInstrument' + (i+1);
 
-        // Pridedamas kiekvienas instromento pasirinkimas į instrumentų pasirinkimo sąrašą {BACKEND}
+        // Pridedamas kiekvienas instrumento pasirinkimas į instrumentų pasirinkimo sąrašą {BACKEND}
         instrumentList.forEach(opt => {
         const instrumentOption = document.createElement('option');
         instrumentOption.value = opt.value;
@@ -135,49 +147,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // NOTE: Galų gale blokų įdėjimo pele ir blokų tampymo funkcijos turės būti pašalintos!
 
 
+    // ========== PASIRINKTŲ INSTRUMENTŲ FIKSAVIMAS ==========
+
+
+
+
     // ========== NATŲ PRIDĖJIMO (ir trynimo) Į SEQUENCERĮ FUNKCIONALUMAS ========== (Galų gale bus pašalintas pridėjimas pele, turės atsirasti automatiškai, priklausomai nuo pianorollo signalų!)
     
-    function addNoteToTrack(track, e) {
-        const rect = sequencer.getBoundingClientRect();
-        let left = e.clientX - rect.left;
-        left = Math.max(0, Math.min(left, timelineWidthPx));
-        left = Math.round(left / gridSize) * gridSize;
-        const width = 50;
+    
+    function openPianorollForTrack(trackId) {
 
-        const note = document.createElement('div');
-        note.className = 'note';
-        note.id = 'note-' + noteCounter;
-        note.style.left = left + 'px';
-        note.style.width = width + 'px';
-        const trackId = track.dataset.trackId;      // {BACKEND}
-        note.style.top = (parseInt(trackId) * trackHeight + 10) + 'px';
-
-        const handle = document.createElement('div');
-        handle.className = 'note-handle';
-        note.appendChild(handle);
-
-        // ADD RIGHT-CLICK DELETE
-        note.addEventListener('contextmenu', e => {
-            e.preventDefault();
-            note.remove();
-            // Po right-click ištrina tą bloką iš sequencer natų-blokų objecto (sąrašo) {BACKEND}
-            trackNotes[trackId] = trackNotes[trackId].filter(n => n.id !== note.id);
-            sendAllNotesToBackend();
-        });
-
-        sequencer.appendChild(note);
-
-        // Į SEQUENCERIO NATŲ-BLOKŲ OBJECTĄ (sąrašą) PRIDEDA NAUJO BLOKO DUOMENIS: ID, PRADŽIOS POZICIJA, TRUKMĖ {BACKEND} !!!!!!!!
-        trackNotes[trackId].push({id: note.id, start: left, duration: width});
-
-        makeDraggable(note, trackId);
-        makeResizable(note, handle, trackId);
-
-        // Incrementina natų-blokų counterį. Nors šitos funkcijos galų gale gal ir nereiks? {BACKEND}
-        noteCounter++;
-
-        sendAllNotesToBackend();
+        let chosenInstrument = document.getElementById("selectInstrument" + trackId).value;
+        
+        if (!chosenInstrument) {
+            let selectOfInstrumentlessTrack = document.getElementById(`selectInstrument${trackId}`);
+            backgroundOfSelect = selectOfInstrumentlessTrack.style.background;
+            selectOfInstrumentlessTrack.style.background = "#ff0000";
+            setTimeout(function(){ selectOfInstrumentlessTrack.style.background = backgroundOfSelect }, 250);
+            return;
+        };
+        
+        fetch(`/api/get-pianoroll-url?track=${trackId}&instrument=${trackId}`)
+            .then(res => res.json())
+            .then(data => {
+                const finalUrl = new URL (data.url, window.location.origin);
+                finalUrl.searchParams.set("instrument", chosenInstrument);
+                window.open(finalUrl.href, "_self");
+            })
+            .catch(err => console.error("Failed to open pianoroll:", err));
+        
     }
+
+
 
 
     // ========== NATŲ-BLOKŲ STUMDYMO PELE FUNKCIJA ==========

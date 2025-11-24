@@ -1,5 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     
+    // iš pianoroll puslapio linko (kuris paduotas iš sequencer_page), ištraukiam track ir instrument query paramus (kitaip tariant, taip pasiimam track ID ir track instrument vertes iš sequencer puslapio)
+    const params = new URLSearchParams(window.location.search);
+    const trackId = params.get("track");
+    const instrument = params.get("instrument");
+
     // priskiriam JS kintamuosius esminiams html pianorollo elementams
     const pianorollContainer = document.getElementById("pianoroll-container");
     const pianoroll = document.getElementById('pianoroll');
@@ -13,7 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let pianorollNotes = {};          // per-pitchRow note data
     let noteCounter = 0;
 
+    let singleNoteRegister = {};
+    const noteNamesOfRows = {};
 
+    document.getElementById("instrumentName").innerHTML = instrument.toUpperCase();
 
 
     // ========================================= PIANOROLL KOMPONENTŲ DALIS =========================================
@@ -38,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Natų eilės
         const pitchRow = document.createElement('div');
         pitchRow.className = 'pitchRow';
-        pitchRow.dataset.trackId = String(i);
+        pitchRow.dataset.rowId = String(i);
         pitchRow.style.position = 'absolute';
         pitchRow.style.left = '0px';
         pitchRow.style.top = (i * pitchRowHeight) + 'px';
@@ -50,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Double clicko event listener (po double click iškviečiama addNoteToTrack funkcija — sukuriama nata)
         pitchRow.addEventListener('dblclick', e => addNoteToTrack(pitchRow, e));
         // Natų eilių numeracija pianorollNotes Objecte {'i' : [...]}
-        pianorollNotes[i] = [];
+        //pianorollNotes[i] = [];
 
         // Natų eilių labelai
         const pitchRowLabel = document.createElement('div');
@@ -129,12 +137,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 pitchRowLabel.textContent += "1";
                 break;
         }
-        pitchLabelsBox.appendChild(pitchRowLabel);                       
+        pianorollNotes[i] = [];
+        noteNamesOfRows[i] = [pitchRowLabel.textContent];       // susirenkam eilių ID ir jų notacijos pavadinimų objectą
+        pitchLabelsBox.appendChild(pitchRowLabel);                  
+
+    }
+
+    // ========== TAKTO LINIJŲ SUKŪRIMAS ==========
+
+    barLineGapLengthPx = 40;
+
+    for (let i = 1; i < Math.floor(timelineWidthPx/barLineGapLengthPx); i++) {
+
+        let barLine = document.createElement("div");
+        barLine.className = "barLine";
+        barLine.style.left = (i*barLineGapLengthPx) + "px";
+        
+        if (i % 4 == 0) {
+            barLine.style.background = "#777777";
+        }
+        else {
+            barLine.style.background = "#333333";
+        }
+
+        pianorollContainer.appendChild(barLine);
 
     }
 
 
+
     // ============================== PIANOROLL ESMINIŲ FUNKCIONALUMŲ DALIS (natų dėjimas/trynimas, stumdymas, tampymas) ==============================
+
+
+    // ========== BENDRAS PIANOROLL, PROGRESSBAR IR BARLINENUMBER SCROLLAS ==========
+    /*
+    const pr = document.getElementById("pianoroll-container");
+    const bar = document.getElementById("barLineNumSection");
+    const pb = document.getElementById("progressBarSection");
+
+    pr.addEventListener("scroll", () => {
+        bar.scrollLeft = pr.scrollLeft;
+        pb.scrollLeft = pr.scrollLeft;
+    });*/
+
+    /*
+    const elements = document.querySelectorAll('.syncedHorizontalScroll');
+
+    elements.forEach(el => {
+        el.addEventListener('scroll', function() {
+            // When one element scrolls horizontally, update all others
+            elements.forEach(otherEl => {
+                if (otherEl !== this) {
+                    otherEl.scrollLeft = this.scrollLeft;
+                }
+            });
+        });
+    });*/
 
 
     // ========== NATŲ PRIDĖJIMO (ir trynimo) Į PIANOROLLĄ FUNKCIONALUMAS ==========
@@ -152,8 +210,8 @@ document.addEventListener('DOMContentLoaded', () => {
         note.id = 'note-' + noteCounter;
         note.style.left = left + 'px';
         note.style.width = width + 'px';
-        const trackId = pitchRow.dataset.trackId;       // {BACKEND}
-        note.style.top = (parseInt(trackId) * pitchRowHeight + 2) + 'px';
+        const rowId = pitchRow.dataset.rowId;       // {BACKEND}
+        note.style.top = (parseInt(rowId) * pitchRowHeight + 2) + 'px';
 
         const handle = document.createElement('div');
         handle.className = 'note-handle';
@@ -164,29 +222,34 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             note.remove();
             // Po right-click ištrina tą natą iš pianoroll natų objecto (sąrašo) {BACKEND}
-            pianorollNotes[trackId] = pianorollNotes[trackId].filter(n => n.id !== note.id);
-            sendAllNotesToBackend();
+            pianorollNotes[rowId] = pianorollNotes[rowId].filter(n => n.id !== note.id);
+            //sendAllNotesToBackend();
         });
 
         // Prideda natos html elementą į pianoroll elementą (nata - pianorollo child)
         pianoroll.appendChild(note);
         
         // Į PIANOROLL NATŲ OBJECTĄ (sąrašą) PRIDEDA NAUJOS NATOS DUOMENIS: ID, PRADŽIOS POZICIJA, TRUKMĖ {BACKEND} !!!!!!!!
-        pianorollNotes[trackId].push({id: note.id, start: left, duration: width});
+        pianorollNotes[rowId].push({id: note.id, start: left, duration: width});
 
-        makeDraggable(note, trackId);
-        makeResizable(note, handle, trackId);
+        makeDraggable(note, rowId);
+        makeResizable(note, handle, rowId);
 
         // Incrementina natų counterį. Nors šitos funkcijos galų gale gal ir nereiks? {BACKEND}
         noteCounter++;
         
-        sendAllNotesToBackend();
+        //sendAllNotesToBackend();
+
+        singleNoteRegister = {"instrument" : instrument, "note": String(noteNamesOfRows[rowId])};
+        sendSingleNote();
+
+        
     }
 
 
     // ========== NATŲ STUMDYMO PELE FUNKCIJA ==========
 
-    function makeDraggable(note, trackId) {
+    function makeDraggable(note, rowId) {
         let offsetX;
         note.addEventListener('mousedown', (e) => {
             if (e.target.className === 'note-handle') return;
@@ -200,12 +263,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 note.style.left = newLeft + 'px';
 
                 // Pianoroll sąraše suranda pastumdytos natos ID {BACKEND}
-                const n = pianorollNotes[trackId].find(n => n.id === note.id);
+                const n = pianorollNotes[rowId].find(n => n.id === note.id);
 
                 // Pakeičia pastumdytos natos start duomenis {BACKEND}
                 if (n) n.start = newLeft;
                 
-                sendAllNotesToBackend();
+                //sendAllNotesToBackend();
 
             }
             
@@ -220,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ========== NATŲ ILGIO KAITYMO (NATŲ TAMPYMO) PELE FUNKCIJA ==========
 
-    function makeResizable(note, handle, trackId) {
+    function makeResizable(note, handle, rowId) {
 
         let startX, startWidth;
         handle.addEventListener('mousedown', (e) => {
@@ -236,12 +299,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 note.style.width = newWidth + 'px';
 
                 // Pianoroll sąraše suranda patampytos natos ID {BACKEND}
-                const n = pianorollNotes[trackId].find(n => n.id === note.id);
+                const n = pianorollNotes[rowId].find(n => n.id === note.id);
 
                 // Pakeičia patampytos natos duration duomenis {BACKEND}
                 if (n) n.duration = newWidth;
                 
-                sendAllNotesToBackend();
+                //sendAllNotesToBackend();
 
             }
             
@@ -344,6 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================== NATŲ DUOMENŲ SIUNTIMO BACKENDAN FUNKCIJA ==============================
     // Šita funkcija pasikeis, nes: 1. jinai siunčia duomenis ne ten;  2. jinai siunčia dabartiniam backendui netinkamo formato duomenis (reiks pianorollNotes formatą pakeist) {BACKEND}
 
+
+    /*
     function sendAllNotesToBackend() {
 
         fetch('/update_tracks', {
@@ -354,6 +419,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         }).catch(err => console.warn('Backend sync failed:', err));
         
+    }*/
+    
+    function sendSingleNote() {
+
+        console.log(JSON.stringify(singleNoteRegister));
+
+        fetch("http://localhost:6767/get_note", {
+            method: 'POST',
+            headers: {'Content-Type' : 'application/json'},
+            body: JSON.stringify(singleNoteRegister)
+        }).catch(err => console.warn('Backend sync failed:', err));
+
     }
 
 });

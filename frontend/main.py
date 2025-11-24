@@ -103,31 +103,38 @@ def pianoroll_page(track: int):
 
     
     <header>
-        <div style="margin: auto; width: 950px; margin-top: 50px; display: flex; flex-direction: row; justify-content: center; align-items: flex-end; gap: 10px;">
+        <div style="margin: auto; width: 950px; margin-top: 50px; margin-bottom: 20px; display: flex; flex-direction: row; justify-content: center; align-items: flex-end; gap: 10px;">
             <img src="/static/logo.svg" alt="logo" width="110" height="130" style="margin-right: 10px;">
             <button id="playButton" class="button square" title="Play"><i class="material-icons" style="font-size:36px;">play_arrow</i></button>
             <button id="pauseButton" class="button square" title="Pause"><i class="material-icons" style="font-size:36px;">pause</i></button>
             <button id="returnButton" class="button square" title="Return"><i class="material-icons" style="font-size:36px;">stop</i></button>
             <button id="selectButton" class="button square" title="Select"><i class="material-icons" style="font-size:36px;">select_all</i></button>
             <button id="duplicateButton" class="button square" title="Duplicate"><i class="material-icons" style="font-size:36px;">content_copy</i></button>
+            <p id="instrumentName"></p>
         </div>
     </header>
-                                      
+    
     <!-- flex-direction:row padaro, kad labelų ir pianoroll dalys rikiuotųsi eilute, ne stulpeliu (ne vertikaliai viens po kitu); justify-content:center padaro, kad visa labelų ir sequencerio visuma būtų horizontaliai vidury, o ne kairėj ar dar kur -->
     <!-- HEIGHT APRIBOJA TAI, KIEK PIANOROLLO AUKŠČIO MATOM (LANGO AUKŠTIS);  OVERFLOW-Y:AUTO NUMATO SCROLL FUNKCIJĄ PIANOROLLUI;  NUSTATOM BACKGROUND SPALVĄ #202020, KAD NESIMATYTŲ TARPO TARP PIANOROLL LANGO IR JO SCROLLBARO, JEIGU SCROLLBARAS NELYGUS 15PX (JEIGU KOKS BROWSERIS NEKLAUSO MŪSŲ 15PX SCROLLBAR WIDTH/HEIGHT NUSTATYMO) -->
     <!-- width = 950px, nes 50(labelai)+900(natų eilių matomoji dalis). Į scrollbaro plotį (15px) atsižvelgt nebūtina, tai dėl to ne 965. -->
-    <div id="whole-pianoroll-container" style="display:flex; flex-direction:row; justify-content:center; margin-top: 20px !important; height: 550px; overflow-y:auto; width: 950px; margin: auto; border-radius: 10px 0px 0px 10px;">
+    <div id="whole-pianoroll-container" style="display:flex; flex-direction:row; justify-content:center; height: 550px; overflow-y:auto; width: 950px; margin: auto; border-radius: 10px 0px 0px 10px;">
         <!-- LEFT LABELS (BENDRAI VISI LABELAI) -->
-        <div id="pitchLabels" style="display:flex; flex-direction:column; width: 50px; background:#202020; color:#eee; font-family:Century Gothic;">
+        <div id="pitchLabels" style="display:flex; flex-direction:column; width: 50px; background:#202020; color:#eee; font-family:Century Gothic; position: relative;">
         </div>
+        
 
         <!-- MAIN PIANOROLL CONTAINER (BENDRAI VISŲ TRACKŲ SKILTIS) ||| OVERFLOW-Y:HIDDEN NELEIDŽIA PIANOROLL-CONTAINER ELEMENTUI SUSIKURT SAVO PATIES SCROLLO, MUM JO NEREIKIA, MUM REIKIA, KAD PIANOROLL EILUČIŲ LABELAI IR PAČIOS EILUTĖS JUDĖTŲ KARTU! -->
         <div id="pianoroll-container" style="width:900px; overflow-x:auto; overflow-y:hidden; position: relative;">
+            <!-- <div id="barLineNumbersSection" class="syncedHorizontalScroll" style="width:10000px; height:10px; background:#111; position:relative;">
+                <p>123456789</p>
+            </div>
+            <div id="progressBar" class="syncedHorizontalScroll" style="width:10000px; height:10px; background:#222; position:relative;"></div> -->
             <!-- VISAS PIANOROLL (IR TA DALIS, KURI NESIMATO PIANOROLLO LANGE) -->
-            <div id="pianoroll" style="width:10000px; background:#111; position:relative;"></div>
+            <div id="pianoroll" class="syncedHorizontalScroll" style="width:10000px; background:#111; position:relative;"></div>
             <div id="playhead"></div>
         </div>
     </div>
+                                 
                                                                      
     <script src="/static/pianoroll_page.js"></script>                               
     """)
@@ -279,7 +286,7 @@ def get_pianoroll_url(track: int):
 async def update_tracks(request: Request):
     global track_note_data
     track_note_data = await request.json()
-    print(track_note_data)  # print to console for debugging
+    # print(track_note_data)  # print to console for debugging
     return {'status': 'ok'}
 
 ui.run()
