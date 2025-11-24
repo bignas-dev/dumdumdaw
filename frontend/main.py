@@ -101,6 +101,7 @@ def pianoroll_page(track: int):
 
     pianorollKodas = ui.add_body_html("""
 
+    <audio id="audio-player"></audio>
     
     <header>
         <div style="margin: auto; width: 950px; margin-top: 50px; margin-bottom: 20px; display: flex; flex-direction: row; justify-content: center; align-items: flex-end; gap: 10px;">

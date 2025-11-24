@@ -18,7 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let pianorollNotes = {};          // per-pitchRow note data
     let noteCounter = 0;
 
+    // registras, kur laikomi naujausiai sukurtos natos duomenys (siųsimi backendui ir atgal gausimas jos wav failas)
     let singleNoteRegister = {};
+    // čia natų vardų ir jų id objectas (žodynėlis). Natų vardai reikalingi backendui
     const noteNamesOfRows = {};
 
     document.getElementById("instrumentName").innerHTML = instrument.toUpperCase();
@@ -138,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
         }
         pianorollNotes[i] = [];
-        noteNamesOfRows[i] = [pitchRowLabel.textContent];       // susirenkam eilių ID ir jų notacijos pavadinimų objectą
+        noteNamesOfRows[i] = [pitchRowLabel.textContent.replace("#", "s")];       // susirenkam eilių ID ir jų notacijos pavadinimų objectą. # pakeičiam į s (nes taip backendas skaito) {BACKEND}
         pitchLabelsBox.appendChild(pitchRowLabel);                  
 
     }
@@ -240,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         //sendAllNotesToBackend();
 
+        // === DĖL SUKURTOS NATOS PAGROJIMO {BACKEND} ===
         singleNoteRegister = {"instrument" : instrument, "note": String(noteNamesOfRows[rowId])};
         sendSingleNote();
 
@@ -421,15 +424,45 @@ document.addEventListener('DOMContentLoaded', () => {
         
     }*/
     
+        
+    // ========== SUKURTOS NATOS DUOMENŲ SIUNTIMO IR GAVIMO FUNKCIJA (KAD JĄ PAGROTŲ) {BACKEND} ==========
+
     function sendSingleNote() {
 
+        // klaidų nustatymui
         console.log(JSON.stringify(singleNoteRegister));
 
         fetch("http://localhost:6767/get_note", {
             method: 'POST',
             headers: {'Content-Type' : 'application/json'},
             body: JSON.stringify(singleNoteRegister)
-        }).catch(err => console.warn('Backend sync failed:', err));
+        })
+        .then(async response => {
+
+            if (!response.ok) throw new Error ("Backend returned error " + response.status);
+            // perskaityt WAV duomenis kaip blob
+            const audioBlob = await response.blob();
+            // WAV paverst laikinan URL'an
+            const audioUrl = URL.createObjectURL(audioBlob);
+
+            playAudio(audioUrl);
+        })
+        .catch(err => console.warn("Backend sync failed:", err));
+
+    }
+
+    // ========== SUKURTOS NATOS GROJIMO FUNKCIJA ==========
+
+    function playAudio(url) {
+
+        const audio = document.getElementById("audio-player");
+
+        if (!audio) {
+            console.error("No <audio> element with id='audio-player'");
+            return;
+        }
+        audio.src = url;
+        audio.play().catch(err => console.error("Audio playback error:", err));
 
     }
 

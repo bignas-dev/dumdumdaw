@@ -19,18 +19,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // APIBRĖŽIAMAS DAW'O INSTRUMENTŲ SĄRAŠAS {BACKEND}
     const instrumentList = [
             {value: "", text: "Choose instrument"},
-            {value: "alto-sax", text: "Alto Sax"},
+            {value: "bass-electric", text: "Electric Bass"},
             {value: "bassoon", text: "Bassoon"},
+            {value: "cello", text: "Cello"},
+            {value: "clarinet", text: "Clarinet"},
+            {value: "contrabass", text: "Contrabass"},
             {value: "flute", text: "Flute"},
-            {value: "guitar", text: "Guitar"},
+            {value: "french-horn", text: "French Horn"},
+            {value: "guitar-acoustic", text: "Acoustic Guitar"},
+            {value: "guitar-electric", text: "Electric Guitar"},
+            {value: "guitar-nylon", text: "Nylon Guitar"},
+            {value: "harmonium", text: "Harmonium"},
             {value: "harp", text: "Harp"},
-            {value: "horn", text: "Horn"},
-            {value: "oboe", text: "Oboe"},
+            {value: "organ", text: "Organ"},
+            {value: "piano", text: "Piano"},
+            {value: "saxophone", text: "Saxophone"},
             {value: "trombone", text: "Trombone"},
-            {value: "trumpet-c", text: "Trumpet-C"},
-            {value: "viola", text: "Viola"},
+            {value: "trumpet", text: "Trumpet"},
+            {value: "tuba", text: "Tuba"},
             {value: "violin", text: "Violin"},
-            {value: "violoncello", text: "Violoncello"},
+            {value: "xylophone", text: "Xylophone"},
     ];             
     //let tracksInstruments = {}; // trackui parinktų instrumentų duomenys
 
