@@ -1,18 +1,42 @@
+import shutil
+import tempfile
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from starlette.background import BackgroundTask
+from pydantic import BaseModel
 from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError
+from starlette.background import BackgroundTask
 import numpy as np
-import tempfile
-import shutil
-from pathlib import Path
 
 SAMPLE_RATE = 44100
 SAMPLES_DIR = Path(__file__).parent / "samples"
 MAX_DURATION = 1_000_000
 
 app = FastAPI(title="DAW Audio Renderer")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class NoteRequest(BaseModel):
+    instrument: str
+    note: str
+
+
+class SaveBlockRequest(BaseModel):
+    name: str
+    sequence: list[tuple[str, str, float, float]]
+
+
+class SaveMainRequest(BaseModel):
+    sequence: list[tuple[str, float, float]]
 
 
 def generate_music(
@@ -82,17 +106,14 @@ main = []
 
 
 @app.post("/get_note", response_class=FileResponse)
-def get_note(instrument: str, note: str):
-    return generate_music([(instrument, note, 0, 500)])
+def get_note(request: NoteRequest):
+    return generate_music([(request.instrument, request.note, 0, 500)])
 
 
 @app.post("/save_block")
-def save_block(
-    name: str,
-    sequence: list[tuple[str, str, float, float]],
-):
+def save_block(request: SaveBlockRequest):
     global blocks
-    blocks[name] = sequence
+    blocks[request.name] = request.sequence
     return {"status": "saved"}
 
 
@@ -111,11 +132,9 @@ def play_block(name: str):
 
 
 @app.post("/save_main")
-def save_main(
-    sequence: list[tuple[str, float, float]],
-):
+def save_main(request: SaveMainRequest):
     global main
-    main = sequence
+    main = request.sequence
     return {"status": "main saved"}
 
 
@@ -137,9 +156,13 @@ def play_main():
     temp_seq = []
     for block in main:
         for insides in blocks[block[0]]:
-            temp_seq.append(
-                [*insides[:2], insides[2] + block[1], min(insides[3], block[2])]
-            )
+            local_start = insides[2]
+            local_end = insides[3]
+            global_start = block[1]
+            global_end = block[2]
+            new_start = local_start + global_start
+            new_end = min(local_end + global_start, global_end)
+            temp_seq.append((insides[0], insides[1], new_start, new_end))
 
     return generate_music(temp_seq)
 
@@ -147,4 +170,4 @@ def play_main():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=6767)
+    uvicorn.run(app, host="127.0.0.1", port=6767)
