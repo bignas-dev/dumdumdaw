@@ -231,8 +231,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Prideda natos html elementą į pianoroll elementą (nata - pianorollo child)
         pianoroll.appendChild(note);
         
-        // Į PIANOROLL NATŲ OBJECTĄ (sąrašą) PRIDEDA NAUJOS NATOS DUOMENIS: ID, PRADŽIOS POZICIJA, TRUKMĖ {BACKEND} !!!!!!!!
-        pianorollNotes[rowId].push({id: note.id, start: left, duration: width});
+        
+        // SENIAU BUVO TOKS: pianorollNotes[rowId].push({id: note.id, start: left, duration: width});
+
+        // Į PIANOROLL NATŲ OBJECTĄ (sąrašą) PRIDEDA NAUJOS NATOS DUOMENIS: ID, INSTRUMENTAS, NATA, PRADŽIOS POZICIJA, PABAIGOS POZICIJA {BACKEND} !!!!!!!!
+        pianorollNotes[rowId].push({id: note.id, instrument: instrument, note: String(noteNamesOfRows[rowId]), start_time_ms: left, end_time_ms: left+width});
+
+        // console.log(pianorollNotes);
+
 
         makeDraggable(note, rowId);
         makeResizable(note, handle, rowId);
@@ -407,7 +413,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    // ============================== NATŲ DUOMENŲ SIUNTIMO BACKENDAN FUNKCIJA ==============================
+    // ========== SUKURTOS NATOS GROJIMO FUNKCIJA ==========
+
+    function playAudio(url) {
+
+        const audio = document.getElementById("audio-player");
+
+        if (!audio) {
+            console.error("No <audio> element with id='audio-player'");
+            return;
+        }
+        audio.src = url;
+        audio.play().catch(err => console.error("Audio playback error:", err));
+
+    }
+
+
+
+    // ============================== NATŲ DUOMENŲ SIUNTIMO BACKENDAN FUNKCIJOS ==============================
     // Šita funkcija pasikeis, nes: 1. jinai siunčia duomenis ne ten;  2. jinai siunčia dabartiniam backendui netinkamo formato duomenis (reiks pianorollNotes formatą pakeist) {BACKEND}
 
 
@@ -424,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
     }*/
     
-        
+
     // ========== SUKURTOS NATOS DUOMENŲ SIUNTIMO IR GAVIMO FUNKCIJA (KAD JĄ PAGROTŲ) {BACKEND} ==========
 
     function sendSingleNote() {
@@ -451,19 +474,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     }
 
-    // ========== SUKURTOS NATOS GROJIMO FUNKCIJA ==========
+    // ========== ... FUNKCIJA ==========
 
-    function playAudio(url) {
+    const saveNoteBlockButton = document.getElementById("saveNoteBlock");
+    if (pianorollNotes) saveNoteBlockButton.addEventListener('click', saveNoteBlock);
 
-        const audio = document.getElementById("audio-player");
+    function saveNoteBlock() {
 
-        if (!audio) {
-            console.error("No <audio> element with id='audio-player'");
-            return;
+        let pianorollData = [];
+
+        for (let i = 0; i < pitchRowCount; i++) {
+
+            let singleTrackData = pianorollNotes[i];
+            //console.log(singleTrackData);
+            
+            singleTrackData.forEach(element => {
+                delete element.id;
+                pianorollData.push(Object.values(element))
+            });
+            
         }
-        audio.src = url;
-        audio.play().catch(err => console.error("Audio playback error:", err));
 
+        const now = new Date();
+        const noteBlockName = "block_" + now.toISOString().replace(/[:.]/g, "-");
+
+        const noteBlockData = {name: noteBlockName, sequence: pianorollData};
+
+        fetch("http://localhost:6767/save_block", {
+            method: 'POST',
+            headers: {'Content-Type' : 'application/json'},
+            body: JSON.stringify(noteBlockData)
+        })
+        .catch(err => console.warn("Backend sync failed:", err));
+        
     }
+
 
 });

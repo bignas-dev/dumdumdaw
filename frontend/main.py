@@ -24,11 +24,13 @@ def include_static_assets(js_files=None, css_files=None):
     """Adds given JS and CSS files to the current NiceGUI page with version cache-busting."""
     js_files = js_files or []
     css_files = css_files or []
+    """
     version = int(time.time())  # forces browser to fetch latest on each run
     for css in css_files:
         ui.add_head_html(f'<link rel="stylesheet" href="/static/{css}?v={version}">')
     for js in js_files:
         ui.add_body_html(f'<script src="/static/{js}?v={version}"></script>')
+    """
 
 
 
@@ -135,6 +137,7 @@ def pianoroll_page(track: int):
             <div id="playhead"></div>
         </div>
     </div>
+    <button id="saveNoteBlock" style="background:white;">Save</button>
                                  
                                                                      
     <script src="/static/pianoroll_page.js"></script>                               
