@@ -448,11 +448,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveCompositionButton = document.getElementById("saveComposition");
     saveCompositionButton.addEventListener('click', saveMainComposition);
 
-    // ========== SEQUENCERIO KOMPOZICIJOS IŠSAUGOJIMAS (bus vykdomas kai: 1. paspaudžiama play (grojimą gi vykdys);  2. kaip nors išeinama iš puslapio (pvz., pianorollan, bet ir main page'an)) ==========
+    // ========== SEQUENCERIO KOMPOZICIJOS IŠSAUGOJIMAS (matyt bus vykdomas kai: 1. paspaudžiama play (grojimą gi vykdys);  2. kaip nors išeinama iš puslapio (pvz., pianorollan, bet ir main page'an)) ==========
 
     function saveMainComposition() {
 
+        let mainCompositionData = [];
         console.log(blockInfo);
+
+        blockInfo.forEach(function(singleBlockInfo) {
+            mainCompositionData.push([singleBlockInfo.name, singleBlockInfo.start, singleBlockInfo.end]);
+        })
+
+        const preparedCompositionData = {sequence: mainCompositionData};
+        console.log(preparedCompositionData);
+
+        fetch("http://localhost:6767/save_main", {
+            method: 'POST',
+            headers: {"Content-Type" : "application/json"},
+            body: JSON.stringify(preparedCompositionData)
+        })
+        .then (response => response.json())
+        .then (data => console.log("Successfully saved:", data))
+        .catch(error => console.warn("Save to backend failed:", error));
 
     }
 
