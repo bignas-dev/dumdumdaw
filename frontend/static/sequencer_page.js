@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+
+    let noteBlockData = {};
+    
+    getAllNoteBlocks();
     
     // priskiriam JS kintamuosius esminiams html sequencerio elementams
     const sequencerContainer = document.getElementById("sequencer-container");
@@ -155,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // NOTE: Galų gale blokų įdėjimo pele ir blokų tampymo funkcijos turės būti pašalintos!
 
 
-    // ========== PASIRINKTŲ INSTRUMENTŲ FIKSAVIMAS ==========
+    // ========== SUKURTŲ NATŲ BLOKŲ SUDĖLIOJIMAS SEQUENCERY ==========
 
 
 
@@ -344,9 +348,61 @@ document.addEventListener('DOMContentLoaded', () => {
     if (returnButton) returnButton.addEventListener('click', stopPlayback);
 
     
+    // ============================== RYŠIO SU BACKENDU FUNKCIJOS ==============================
+    
+    // ========== JAU SUKURTŲ NATŲ BLOKŲ DUOMENŲ PASIĖMIMO FUNKCIJA ==========
+
+    function getAllNoteBlocks() {
+
+        fetch("http://localhost:6767/get_all_blocks")
+            .then(response => {
+                console.log(response);
+                // čia returnina reikiamus duomenis (blokų, ne responso!)
+                return response.json();
+            })
+            .then(blocks => {
+                noteBlockData = blocks;
+                placeBlocksInSequencer(noteBlockData);
+                console.log(noteBlockData);
+            })
+            .catch(err => console.warn('Backend sync failed:', err));
+
+    }
+
+    function placeBlocksInSequencer(noteBlockData) {
+
+        let pureNoteBlockData = Object.values(noteBlockData);
+        console.log(pureNoteBlockData);
+
+        // gausim natų blokų pradžios ir pabaigos laikus
+        const ranges = getNoteBlockTimeRanges(pureNoteBlockData);
+        console.log(ranges);
+
+        // dar reikia: 
+        // 1. kiekvienam blokui sukurt objektą, su vertėm (ne tik?): id, start, end
+        // 2. blokus priskirt atitinkamiem trackam
+        // 3. trackam priskirt instrumentus (kad tai rodytų selecte)
+
+    }
+
+    function getNoteBlockTimeRanges(pureNoteBlockData) {
+
+        return pureNoteBlockData.map(block => {
+            // get all start and end times
+            const starts = block.map(note => note[2]);
+            const ends   = block.map(note => note[3]);
+
+            // compute min / max
+            const blockStart = Math.min(...starts);
+            const blockEnd   = Math.max(...ends);
+
+            return { start: blockStart, end: blockEnd };
+        });
+
+    }
+
 
     // ============================== NATŲ-BLOKŲ DUOMENŲ SIUNTIMO BACKENDAN FUNKCIJA ==============================
-    // Šita funkcija pasikeis, nes: 1. jinai siunčia duomenis ne ten;  2. jinai siunčia dabartiniam backendui netinkamo formato duomenis (reiks trackNotes formatą pakeist) {BACKEND}
 
     function sendAllNotesToBackend() {
 

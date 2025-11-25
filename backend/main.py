@@ -124,6 +124,11 @@ def get_block(name: str):
     return blocks[name]
 
 
+@app.get("/get_all_blocks")
+def get_all_blocks():
+    return blocks
+
+
 @app.post("/play_block", response_class=FileResponse)
 def play_block(name: str):
     if name not in blocks:

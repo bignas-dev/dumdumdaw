@@ -38,7 +38,7 @@ def include_static_assets(js_files=None, css_files=None):
 # set'as (duomenų rinkinys), skirtas rinkti dedamų natų duomenims (aktualu backendui):
 track_note_data = []
 
-@ui.page('/')
+@ui.page('/sequencer')
 def sequencer_page():
 
     include_static_assets(js_files=['sequencer_page.js'], css_files=['sequencer_page.css'])
@@ -147,7 +147,7 @@ def pianoroll_page(track: int):
 
 
 ## dar čia tvarkytina |||||||||||||
-@ui.page("/page3")
+@ui.page("/")
 def page3():
     include_static_assets(js_files=[], css_files=[])
 
@@ -265,7 +265,7 @@ def page3():
     </div>
   </div>
   <div class="content-block">
-    <div class="left-block"><h1 class="text-block">The Best DAW For Dumdums!</h1> <h5 class="smalltext-block">Make simple MIDI beats, <br> all in an easy-to-use <br> interface.</h5><a href="/" class="mygtukas">Open Builder</a></div>
+    <div class="left-block"><h1 class="text-block">The Best DAW For Dumdums!</h1> <h5 class="smalltext-block">Make simple MIDI beats, <br> all in an easy-to-use <br> interface.</h5><a href="/sequencer" class="mygtukas">Open Builder</a></div>
   
     <div><img class="logo-screen" src="static/screen.png"/></div>
     <div></div>

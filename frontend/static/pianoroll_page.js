@@ -471,43 +471,56 @@ document.addEventListener('DOMContentLoaded', () => {
             playAudio(audioUrl);
         })
         .catch(err => console.warn("Backend sync failed:", err));
-
     }
 
-    // ========== ... FUNKCIJA ==========
 
+    // ========== PIANOROLL KOMPOZICIJOS (= NATŲ BLOKO) IŠSAUGOJIMO BACKENDE FUNKCIJA ==========
+
+    // save mygtukas
     const saveNoteBlockButton = document.getElementById("saveNoteBlock");
+    // paspaudus save mygtuką, bus vykdoma saveNoteBlock funkcija
     if (pianorollNotes) saveNoteBlockButton.addEventListener('click', saveNoteBlock);
 
     function saveNoteBlock() {
 
+        // čia bus surenkami patys pianoroll natų duomenys
         let pianorollData = [];
 
+        // kiekvienos atskiros pianoroll eilutės natų objectai pridedami atskirai į pianorollData array (ale deconstructinam pianorollNotes, kuriame talpinti natų duomenys (nors dar su ID, kurio reik pianorollui, bet backendui ne))
         for (let i = 0; i < pitchRowCount; i++) {
 
             let singleTrackData = pianorollNotes[i];
-            //console.log(singleTrackData);
             
             singleTrackData.forEach(element => {
                 delete element.id;
                 pianorollData.push(Object.values(element))
             });
-            
         }
 
+        // dėl natų bloko pavadinimo (turi unikalūs būti, dėl to pagal datą)
         const now = new Date();
-        const noteBlockName = "block_" + now.toISOString().replace(/[:.]/g, "-");
+        const noteBlockName = trackId + "_" + instrument + "_" + now.toISOString().replace(/[:.]/g, "-");
 
+        // čia jau tas gatavas objectas, kurį siųsim backendui
         const noteBlockData = {name: noteBlockName, sequence: pianorollData};
 
+        // siuntimas backendui (ir status atsako gavimas iš jo) 
         fetch("http://localhost:6767/save_block", {
             method: 'POST',
             headers: {'Content-Type' : 'application/json'},
             body: JSON.stringify(noteBlockData)
         })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Saved OK:", data);
+            window.location.replace("/sequencer");
+        })
         .catch(err => console.warn("Backend sync failed:", err));
-        
+
     }
+
+    // ===== =====
+    
 
 
 });
