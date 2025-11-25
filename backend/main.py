@@ -1,4 +1,5 @@
 import shutil
+from collections import defaultdict
 import tempfile
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
@@ -103,6 +104,29 @@ def generate_music(
 
 blocks = {}
 main = []
+
+
+@app.get("/get_instruments")
+def get_instruments():
+    instrument_data = defaultdict(list)
+
+    if not SAMPLES_DIR.exists() or not SAMPLES_DIR.is_dir():
+        return instrument_data
+
+    for instrument in sorted(SAMPLES_DIR.iterdir(), key=lambda p: p.name.lower()):
+        if not instrument.is_dir():
+            continue
+
+        instrument_name = instrument.name
+
+        for note in sorted(instrument.iterdir(), key=lambda p: p.name.lower()):
+            if not note.is_file():
+                continue
+
+            note_name = note.stem
+            instrument_data[instrument_name].append(note_name)
+
+    return instrument_data
 
 
 @app.post("/get_note", response_class=FileResponse)
