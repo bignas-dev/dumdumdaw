@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
+
+    let blockInfo = [];
+    //let noteBlockData = {};
+    
+    getAllNoteBlocks();
     
     // priskiriam JS kintamuosius esminiams html sequencerio elementams
     const sequencerContainer = document.getElementById("sequencer-container");
@@ -19,11 +24,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // APIBRĖŽIAMAS DAW'O INSTRUMENTŲ SĄRAŠAS {BACKEND}
     const instrumentList = [
             {value: "", text: "Choose instrument"},
-            {value: "piano", text: "Piano"},
-            {value: "guitar", text: "Guitar"},
-            {value: "drums", text: "Drums"},
+            {value: "bass-electric", text: "Electric Bass"},
+            {value: "bassoon", text: "Bassoon"},
+            {value: "cello", text: "Cello"},
+            {value: "clarinet", text: "Clarinet"},
+            {value: "contrabass", text: "Contrabass"},
+            {value: "flute", text: "Flute"},
+            {value: "french-horn", text: "French Horn"},
+            {value: "guitar-acoustic", text: "Acoustic Guitar"},
+            {value: "guitar-electric", text: "Electric Guitar"},
+            {value: "guitar-nylon", text: "Nylon Guitar"},
+            {value: "harmonium", text: "Harmonium"},
+            {value: "harp", text: "Harp"},
             {value: "organ", text: "Organ"},
-            {value: "synth", text: "Synth"},
+            {value: "piano", text: "Piano"},
+            {value: "saxophone", text: "Saxophone"},
+            {value: "trombone", text: "Trombone"},
+            {value: "trumpet", text: "Trumpet"},
+            {value: "tuba", text: "Tuba"},
+            {value: "violin", text: "Violin"},
+            {value: "xylophone", text: "Xylophone"},
     ];             
     //let tracksInstruments = {}; // trackui parinktų instrumentų duomenys
 
@@ -49,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Trackai
         const track = document.createElement('div');
         track.className = 'track';
-        track.dataset.trackId = String(i);
+        track.dataset.trackId = String(i+1);
         track.style.position = 'absolute';
         track.style.left = '0px';
         track.style.top = (i * trackHeight) + 'px';
@@ -58,8 +78,12 @@ document.addEventListener('DOMContentLoaded', () => {
         track.style.background = (i % 2 === 0) ? '#0d1821' : '#142532';     // tracko fono spalva (dvi spalvos, nes kas antras trackas yra tamsesnis, kas antras yra šviesesnis)
         track.style.borderBottom = '1px solid #333';
         sequencer.appendChild(track);
-        // (ŠITĄ LISTENERĮ GALŲ GALE REIKS PAŠALINT!!! BLOKAI KURSIS AUTOMATIŠKAI, PAGAL PIANOROLLO DUOMENIS) Double clicko event listener (po double click iškviečiama addNoteToTrack funkcija — sukuriamas blokas)
-        track.addEventListener('dblclick', e => addNoteToTrack(track, e));
+        
+        track.addEventListener("dblclick", e => {
+            const trackId = track.dataset.trackId;
+            openPianorollForTrack(trackId);
+            
+        });
         // Trackų numeracija trackNotes Objecte {'i' : [...]} {BACKEND}
         trackNotes[i] = [];         // paruošia vietą i-tojo tracko natoms trackNotes sąraše
 
@@ -110,10 +134,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Pats sąrašas (html select tipo elementas)
         const selectInstrument = document.createElement('select');
-        selectInstrument.name = 'selectInstrument';
-        selectInstrument.id = 'selectInstrument';
+        selectInstrument.className = "selectInstrument";
+        selectInstrument.name = 'selectInstrument' + (i+1);
+        selectInstrument.id = 'selectInstrument' + (i+1);
 
-        // Pridedamas kiekvienas instromento pasirinkimas į instrumentų pasirinkimo sąrašą {BACKEND}
+        // Pridedamas kiekvienas instrumento pasirinkimas į instrumentų pasirinkimo sąrašą {BACKEND}
         instrumentList.forEach(opt => {
         const instrumentOption = document.createElement('option');
         instrumentOption.value = opt.value;
@@ -135,83 +160,117 @@ document.addEventListener('DOMContentLoaded', () => {
     // NOTE: Galų gale blokų įdėjimo pele ir blokų tampymo funkcijos turės būti pašalintos!
 
 
-    // ========== NATŲ PRIDĖJIMO (ir trynimo) Į SEQUENCERĮ FUNKCIONALUMAS ========== (Galų gale bus pašalintas pridėjimas pele, turės atsirasti automatiškai, priklausomai nuo pianorollo signalų!)
-    
-    function addNoteToTrack(track, e) {
-        const rect = sequencer.getBoundingClientRect();
-        let left = e.clientX - rect.left;
-        left = Math.max(0, Math.min(left, timelineWidthPx));
-        left = Math.round(left / gridSize) * gridSize;
-        const width = 50;
+    // ========== JAU SUKURTŲ NATŲ BLOKŲ VIZUALUS SUDĖLIOJIMAS Į SEQUENCERĮ ==========
 
-        const note = document.createElement('div');
-        note.className = 'note';
-        note.id = 'note-' + noteCounter;
-        note.style.left = left + 'px';
-        note.style.width = width + 'px';
-        const trackId = track.dataset.trackId;      // {BACKEND}
-        note.style.top = (parseInt(trackId) * trackHeight + 10) + 'px';
+    function placeBlocksInSequencer(noteBlockData) {
 
-        const handle = document.createElement('div');
-        handle.className = 'note-handle';
-        note.appendChild(handle);
+        blockInfo = makeNoteBlockInfoObjects(noteBlockData);
+        console.log(blockInfo);
 
-        // ADD RIGHT-CLICK DELETE
-        note.addEventListener('contextmenu', e => {
-            e.preventDefault();
-            note.remove();
-            // Po right-click ištrina tą bloką iš sequencer natų-blokų objecto (sąrašo) {BACKEND}
-            trackNotes[trackId] = trackNotes[trackId].filter(n => n.id !== note.id);
-            sendAllNotesToBackend();
+        blockInfo.forEach(function(singleBlock) {
+
+            const block = document.createElement('div'); // kiekvienam duombazėj esančiam natų blokui sukuriamas html elementas (bus vizualus blokas)
+            block.className = "noteBlock";
+            block.id = singleBlock.name;
+            block.style.left = singleBlock.start + 'px';
+            block.style.width = (singleBlock.end - singleBlock.start) + 'px';
+            block.style.top = (parseInt(singleBlock.track - 1) * trackHeight + 10) + 'px';
+
+            const blockHandle = document.createElement("div");
+            blockHandle.className = 'blockHandle';
+            block.appendChild(blockHandle);
+
+            const blockDate = document.createElement("div");
+            blockDate.className = "blockDate"
+            blockDate.innerHTML = singleBlock.date.replace(/_/g, " ");
+            blockDate.title = singleBlock.date.replace(/_/g, " ");
+            block.appendChild(blockDate);
+
+            sequencer.appendChild(block);
+
+            makeDraggable(block);
+
         });
 
-        sequencer.appendChild(note);
+        // dar reikia: 
+        // V 1. kiekvienam blokui sukurt objektą, su vertėm (ne tik?): id, start, end
+        // V 2. blokus priskirt atitinkamiem trackam
+        // X 3. trackam priskirt instrumentus (kad tai rodytų selecte)
 
-        // Į SEQUENCERIO NATŲ-BLOKŲ OBJECTĄ (sąrašą) PRIDEDA NAUJO BLOKO DUOMENIS: ID, PRADŽIOS POZICIJA, TRUKMĖ {BACKEND} !!!!!!!!
-        trackNotes[trackId].push({id: note.id, start: left, duration: width});
-
-        makeDraggable(note, trackId);
-        makeResizable(note, handle, trackId);
-
-        // Incrementina natų-blokų counterį. Nors šitos funkcijos galų gale gal ir nereiks? {BACKEND}
-        noteCounter++;
-
-        sendAllNotesToBackend();
     }
 
 
     // ========== NATŲ-BLOKŲ STUMDYMO PELE FUNKCIJA ==========
 
-    function makeDraggable(note, trackId) {
+    function makeDraggable(block) {
         let offsetX;
-        note.addEventListener('mousedown', (e) => {
-            if (e.target.className === 'note-handle') return;
-            offsetX = e.clientX - note.getBoundingClientRect().left;
+        block.addEventListener('mousedown', (e) => {
+
+            if (e.target.className !== 'blockHandle') return;
+            offsetX = e.clientX - block.getBoundingClientRect().left;
+
             function mouseMoveHandler(e) {
+
                 const rect = sequencer.getBoundingClientRect();
                 let newLeft = e.clientX - rect.left - offsetX;
-                newLeft = Math.max(0, Math.min(newLeft, timelineWidthPx - note.offsetWidth));
+                newLeft = Math.max(0, Math.min(newLeft, timelineWidthPx - block.offsetWidth));
                 newLeft = Math.round(newLeft / gridSize) * gridSize;
-                note.style.left = newLeft + 'px';
+                block.style.left = newLeft + 'px';
 
-                // Sequencer sąraše suranda pastumdyto bloko ID {BACKEND}
-                const n = trackNotes[trackId].find(n => n.id === note.id);
+                // === STUMDYTŲ NATŲ BLOKŲ DUOMENŲ PAKEITIMAS (blockInfo arrayuye) ===
 
-                // Pakeičia pastumdyto bloko start duomenis {BACKEND}
-                if (n) n.start = newLeft;
-
-                sendAllNotesToBackend();
-
+                // Randam pajudintojo natų bloko objecto indeksą blockInfo arrayuye (pagal objecto name property (aka pagal natų bloko pavadinimą))
+                const indexOfDraggedBlock = blockInfo.findIndex(singleBlock => singleBlock.name === block.id)
+                // Jeigu rado (o šjp turi rast), tai tada atitinkamai pakeičiami to natų bloko objecto start ir end vertės.
+                if (indexOfDraggedBlock !== -1) {
+                    blockInfo[indexOfDraggedBlock].end += newLeft - blockInfo[indexOfDraggedBlock].start;
+                    blockInfo[indexOfDraggedBlock].start = newLeft;
+                    // console.log(blockInfo);
+                }
             }
 
             function mouseUpHandler() {
                 document.removeEventListener('mousemove', mouseMoveHandler);
                 document.removeEventListener('mouseup', mouseUpHandler);
             }
+
             document.addEventListener('mousemove', mouseMoveHandler);
             document.addEventListener('mouseup', mouseUpHandler);
+
         });
     }
+
+
+    // ========== NAUJO NATŲ BLOKO PIANOROLLO ATIDARYMO FUNKCIJA ==========
+    
+    function openPianorollForTrack(trackId) {
+
+        saveMainComposition();
+
+        let chosenInstrument = document.getElementById("selectInstrument" + trackId).value;
+        
+        if (!chosenInstrument) {
+            let selectOfInstrumentlessTrack = document.getElementById(`selectInstrument${trackId}`);
+            backgroundOfSelect = selectOfInstrumentlessTrack.style.background;
+            selectOfInstrumentlessTrack.style.background = "#ff0000";
+            setTimeout(function(){ selectOfInstrumentlessTrack.style.background = backgroundOfSelect }, 250);
+            return;
+        };
+        
+        fetch(`/api/get-pianoroll-url?track=${trackId}&instrument=${trackId}`)
+            .then(res => res.json())
+            .then(data => {
+                const finalUrl = new URL (data.url, window.location.origin);
+                finalUrl.searchParams.set("instrument", chosenInstrument);
+                window.open(finalUrl.href, "_self");
+            })
+            .catch(err => console.error("Failed to open pianoroll:", err));
+        
+    }
+
+
+
+
 
     // ========== BLOKŲ ILGIO KAITYMO (BLOKŲ TAMPYMO) PELE FUNKCIJA ========== (Ji galų gale turės būti pašalinta!!)
 
@@ -335,10 +394,89 @@ document.addEventListener('DOMContentLoaded', () => {
     if (returnButton) returnButton.addEventListener('click', stopPlayback);
 
     
+    // ============================== RYŠIO SU BACKENDU (TIESIOGIAI/NETIESIOGIAI) FUNKCIJOS ==============================
+    
+    // ========== JAU SUKURTŲ NATŲ BLOKŲ DUOMENŲ PASIĖMIMO FUNKCIJA ==========
+
+    function getAllNoteBlocks() {
+
+        fetch("http://localhost:6767/get_all_blocks")
+            .then(response => {
+                console.log(response);
+                // čia returnina reikiamus duomenis (blokų, ne responso!)
+                return response.json();
+            })
+            .then(blocks => {
+                noteBlockData = blocks;
+                placeBlocksInSequencer(noteBlockData);
+                console.log(noteBlockData);
+            })
+            .catch(err => console.warn('Backend sync failed:', err));
+
+    }
+
+    
+
+    // ========== NATŲ BLOKŲ DUOMENŲ PARUOŠIMAS SEQUENCERIO PUSLAPIUI (t.y. frontendui) ==========
+
+    function makeNoteBlockInfoObjects(noteBlockData) {
+
+        return Object.entries(noteBlockData).map(([blockName, notes]) => {
+
+            const starts = notes.map(note => note[2]);
+            const ends   = notes.map(note => note[3]);
+
+            const splitBlockName = blockName.split("_");
+            const trackId = splitBlockName[0];
+            const blockInstrument = splitBlockName[1];
+            const creationDate = splitBlockName[2] + "_" + splitBlockName[3].replace(/-/g, ":");
+
+            return {
+                name: blockName,
+                track: trackId,
+                instrument: blockInstrument,
+                date: creationDate,
+                start: (Math.min(...starts)) / 10,
+                end: (Math.max(...ends)) / 10
+            };
+        });
+
+    }
+
+
+
+    const saveCompositionButton = document.getElementById("saveComposition");
+    saveCompositionButton.addEventListener('click', saveMainComposition);
+
+    // ========== SEQUENCERIO KOMPOZICIJOS IŠSAUGOJIMAS (matyt bus vykdomas kai: 1. paspaudžiama play (grojimą gi vykdys);  2. kaip nors išeinama iš puslapio (pvz., pianorollan, bet ir main page'an)) ==========
+
+    function saveMainComposition() {
+
+        let mainCompositionData = [];
+        console.log(blockInfo);
+
+        blockInfo.forEach(function(singleBlockInfo) {
+            mainCompositionData.push([singleBlockInfo.name, singleBlockInfo.start, singleBlockInfo.end]);
+        })
+
+        const preparedCompositionData = {sequence: mainCompositionData};
+        console.log(preparedCompositionData);
+
+        fetch("http://localhost:6767/save_main", {
+            method: 'POST',
+            headers: {"Content-Type" : "application/json"},
+            body: JSON.stringify(preparedCompositionData)
+        })
+        .then (response => response.json())
+        .then (data => console.log("Successfully saved:", data))
+        .catch(error => console.warn("Save to backend failed:", error));
+
+    }
+
+
 
     // ============================== NATŲ-BLOKŲ DUOMENŲ SIUNTIMO BACKENDAN FUNKCIJA ==============================
-    // Šita funkcija pasikeis, nes: 1. jinai siunčia duomenis ne ten;  2. jinai siunčia dabartiniam backendui netinkamo formato duomenis (reiks trackNotes formatą pakeist) {BACKEND}
-
+    /*
     function sendAllNotesToBackend() {
 
         fetch('/update_tracks', {
@@ -349,6 +487,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         }).catch(err => console.warn('Backend sync failed:', err));
 
-    }
+    }*/
     
 });
