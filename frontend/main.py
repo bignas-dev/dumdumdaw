@@ -64,6 +64,7 @@ def sequencer_page():
             <span class="tempo-labelL">Tempo:</span>
             <input class="tempo-input" type="number" value="120" step = "5"/>
             <span class="tempo-labelR">bpm</span>
+            <button id="saveComposition" style="background: white;">Save</button>
         </div>
     </header>
                                       
