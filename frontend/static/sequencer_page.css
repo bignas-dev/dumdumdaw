@@ -85,6 +85,10 @@ body {
 
 
 
+
+
+
+/*PLAYHEAD STILIAI (TA VERTIKALI GROJIMO LINIJA)*/
 #playhead {
     position: absolute;
     top: 0;
@@ -95,29 +99,43 @@ body {
     transform: translateX(0px);
 }
 
+
+
+
                 
 /*NATOS BLOKELIO STILIAI*/
-.note {
+.noteBlock {
     position: absolute;
     height: 80px;
     background: #2ecc71;
     border: 1px solid #27ae60;
-    cursor: move;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
+    /*cursor: move;*/ /*gal judinsis tik su rankena?*/
+    display: block;
     border-radius: 4px;
     box-sizing: border-box;
+
+    overflow-wrap: anywhere;
+    overflow: hidden;
 }
-                
-/*NATOS BLOKELIO "RANKENOS" (kairėje) STILIAI*/
-.note-handle {
-    width: 8px;
-    height: 100%;
+
+/*NATOS BLOKELIO "RANKENOS" (viršuje) STILIAI*/
+.blockHandle {
+    width: 100%;
+    height: 12px;
     background: #27ae60;
-    cursor: ew-resize;
-    border-left: 1px solid rgba(0,0,0,0.15);
+    cursor: move;
+    border-bottom: 1px solid rgba(0,0,0,0.15);
 }
+
+/*NATOS BLOKO DATOS (TEKSTAS DIV'E) STILIAI*/
+.blockDate {
+    color:#ffffff9d;
+    font-size: 10px;
+    padding: 2px;
+}
+
+
+
 
 /*TRACK 1 LABEL LANGELIO STILIAI (kad apvalint jo top-left kampą)*/
 #track-1-label {

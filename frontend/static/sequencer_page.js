@@ -371,12 +371,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function placeBlocksInSequencer(noteBlockData) {
 
-        let pureNoteBlockData = Object.values(noteBlockData);
-        console.log(pureNoteBlockData);
+        const blockInfo = makeNoteBlockInfoObjects(noteBlockData);
+        console.log(blockInfo);
 
-        // gausim natų blokų pradžios ir pabaigos laikus
-        const ranges = getNoteBlockTimeRanges(pureNoteBlockData);
-        console.log(ranges);
+        blockInfo.forEach(function(singleBlock) {
+            const block = document.createElement('div'); // kiekvienam duombazėj esančiam natų blokui sukuriamas html elementas (bus vizualus blokas)
+            block.className = "noteBlock";
+            block.id = singleBlock.name;
+            block.style.left = singleBlock.start / 10 + 'px';
+            block.style.width = (singleBlock.end - singleBlock.start) / 10  +  'px';
+            block.style.top = (parseInt(singleBlock.track - 1) * trackHeight + 10) + 'px';
+
+            //const blockElements = document.createElement("div");
+            //blockElements.className = "blockElements";
+
+            const blockHandle = document.createElement("div");
+            blockHandle.className = 'blockHandle';
+            block.appendChild(blockHandle);
+
+            const blockDate = document.createElement("div");
+            blockDate.className = "blockDate"
+            blockDate.innerHTML = singleBlock.date.replace(/_/g, " ");
+            blockDate.title = singleBlock.date.replace(/_/g, " ");
+            block.appendChild(blockDate);
+
+            //block.appendChild(blockLabel);
+            //block.appendChild(blockElements);
+
+            sequencer.appendChild(block);
+        })
 
         // dar reikia: 
         // 1. kiekvienam blokui sukurt objektą, su vertėm (ne tik?): id, start, end
@@ -385,18 +408,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     }
 
-    function getNoteBlockTimeRanges(pureNoteBlockData) {
+    function makeNoteBlockInfoObjects(noteBlockData) {
 
-        return pureNoteBlockData.map(block => {
-            // get all start and end times
-            const starts = block.map(note => note[2]);
-            const ends   = block.map(note => note[3]);
+        return Object.entries(noteBlockData).map(([blockName, notes]) => {
 
-            // compute min / max
-            const blockStart = Math.min(...starts);
-            const blockEnd   = Math.max(...ends);
+            const starts = notes.map(note => note[2]);
+            const ends   = notes.map(note => note[3]);
 
-            return { start: blockStart, end: blockEnd };
+            const splitBlockName = blockName.split("_");
+            const trackId = splitBlockName[0];
+            const blockInstrument = splitBlockName[1];
+            const creationDate = splitBlockName[2] + "_" + splitBlockName[3].replace(/-/g, ":");
+
+            return {
+                name: blockName,
+                track: trackId,
+                instrument: blockInstrument,
+                date: creationDate,
+                start: Math.min(...starts),
+                end: Math.max(...ends)
+            };
         });
 
     }
