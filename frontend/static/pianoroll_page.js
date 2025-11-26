@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const n = pianorollNotes[rowId].find(n => n.id === note.id);
 
                 // Pakeičia pastumdytos natos start duomenis {BACKEND}
-                if (n) n.start = newLeft;
+                if (n) n.start_time_ms = newLeft * 10;
                 
                 //sendAllNotesToBackend();
 
@@ -430,23 +430,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    // ============================== NATŲ DUOMENŲ SIUNTIMO BACKENDAN FUNKCIJOS ==============================
-    // Šita funkcija pasikeis, nes: 1. jinai siunčia duomenis ne ten;  2. jinai siunčia dabartiniam backendui netinkamo formato duomenis (reiks pianorollNotes formatą pakeist) {BACKEND}
-
-
-    /*
-    function sendAllNotesToBackend() {
-
-        fetch('/update_tracks', {
-
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(pianorollNotes)
-
-        }).catch(err => console.warn('Backend sync failed:', err));
-        
-    }*/
     
+    // ============================== NATŲ DUOMENŲ SIUNTIMO BACKENDAN FUNKCIJOS ==============================
+
 
     // ========== SUKURTOS NATOS DUOMENŲ SIUNTIMO IR GAVIMO FUNKCIJA (KAD JĄ PAGROTŲ) {BACKEND} ==========
 
@@ -506,6 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             });
         }
+        console.log(pianorollData);
 
         // dėl natų bloko pavadinimo (turi unikalūs būti, dėl to pagal datą; datą dar reik aptvarkyt, tai čia tą ir darom)
         const now = new Date();
@@ -518,6 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // čia jau tas gatavas objectas, kurį siųsim backendui
         const noteBlockData = {name: noteBlockName, sequence: pianorollData};
+        console.log(noteBlockData);
 
         // siuntimas backendui (ir status atsako gavimas iš jo) 
         fetch("http://localhost:6767/save_block", {
@@ -528,9 +516,54 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(response => response.json())
         .then(data => {
             console.log("Saved OK:", data);
+            // window.location.replace("/sequencer");
+        })
+        .catch(err => console.warn("Backend sync failed:", err));
+
+
+        // ===== SIUNTIMAS Į SAVE_MAIN =====
+
+        let mainBlockData = prepareNoteBlockDataForMain(noteBlockData);
+        console.log(mainBlockData);
+
+        const preparedBlockDataForMain = {sequence: [mainBlockData.block_name, mainBlockData.start_time_ms, mainBlockData.duration_ms]};
+        console.log(preparedBlockDataForMain);
+        
+        fetch("http://localhost:6767/add_block_to_main", {
+            method: 'POST',
+            headers: {'Content-Type' : 'application/json'},
+            body: JSON.stringify(preparedBlockDataForMain)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Saved OK:", data);
             window.location.replace("/sequencer");
         })
         .catch(err => console.warn("Backend sync failed:", err));
+
+    }
+
+
+    // ========== NATŲ BLOKO DUOMENŲ PARUOŠIMAS SAUGOJIMUI Į SAVE_MAIN ==========
+
+    function prepareNoteBlockDataForMain(noteBlockData) {
+
+        const blockName = noteBlockData.name;
+        const blockData = noteBlockData.sequence;   // [[instr,note,start,end], [...], ...]
+
+        const noteStarts = blockData.map(parameter => parameter[2]);
+        const noteEnds = blockData.map(parameter => parameter[3]);
+
+        const blockStartMs = Math.min(...noteStarts);
+        const blockEndMs = Math.max(...noteEnds);
+
+        const blockDuration = blockEndMs - blockStartMs;
+
+        return {
+            block_name: blockName,
+            start_time_ms: blockStartMs,
+            duration_ms: blockDuration
+        }
 
     }
 

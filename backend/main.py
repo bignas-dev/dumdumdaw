@@ -39,6 +39,9 @@ class SaveBlockRequest(BaseModel):
 class SaveMainRequest(BaseModel):
     sequence: list[tuple[str, float, float]]
 
+class AddToMainRequest(BaseModel):
+    sequence: tuple[str, float, float]
+
 
 def generate_music(
     sequence: list[tuple[str, str, float, float]],
@@ -141,16 +144,17 @@ def save_block(request: SaveBlockRequest):
     return {"status": "saved"}
 
 
+@app.post("/add_block_to_main")
+def add_block_to_main(request: AddToMainRequest):
+    main.append(request.sequence)
+    return {"status": "added"}
+
+
 @app.get("/get_block")
 def get_block(name: str):
     if name not in blocks:
         raise HTTPException(status_code=404, detail=f"Block '{name}' not found")
     return blocks[name]
-
-
-@app.get("/get_all_blocks")
-def get_all_blocks():
-    return blocks
 
 
 @app.post("/play_block", response_class=FileResponse)

@@ -1,9 +1,11 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
-    let blockInfo = [];
-    //let noteBlockData = {};
     
-    getAllNoteBlocks();
+    let mainBlockData = [];
+
+    await getMainComposition();     // Be "await", natų blokų duomenys nėra laiku užkraunami. Dėl to ir visa dengianti addeventlistener funkcija turi async.
+    console.log(mainBlockData);
+
     
     // priskiriam JS kintamuosius esminiams html sequencerio elementams
     const sequencerContainer = document.getElementById("sequencer-container");
@@ -146,7 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
         selectInstrument.appendChild(instrumentOption);
         });
 
-
         // Į bendrą parent label box konteinerį sudedami visi jo elementai, ir pats label box į visų labelų bendrą konteinerį
         labelBox.appendChild(label)
         labelBox.appendChild(parametersVolumeButtonsContainer);
@@ -156,25 +157,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // ============================== SEQUENCERIO ESMINIŲ FUNKCIONALUMŲ DALIS (natų-blokų dėjimas/trynimas, stumdymas, tampymas) ==============================
+
+    // ============================== SEQUENCERIO ESMINIŲ FUNKCIONALUMŲ DALIS (natų-blokų automatinis dėjimas, trynimas, stumdymas) ==============================
     // NOTE: Galų gale blokų įdėjimo pele ir blokų tampymo funkcijos turės būti pašalintos!
 
+    // Vizualių blokų sukūrimo funkcija iškviečiama čia, nes pirma reikia, kad būtų sukurtas visas sequenceris
+    placeBlocksInSequencer(mainBlockData);
 
-    // ========== JAU SUKURTŲ NATŲ BLOKŲ VIZUALUS SUDĖLIOJIMAS Į SEQUENCERĮ ==========
 
-    function placeBlocksInSequencer(noteBlockData) {
+    // ========== ESAMŲ BLOKŲ VIZUALUS SUDĖLIOJIMAS SEQUENCERY ==========    
 
-        blockInfo = makeNoteBlockInfoObjects(noteBlockData);
-        console.log(blockInfo);
+    function placeBlocksInSequencer(mainBlockData) {
 
-        blockInfo.forEach(function(singleBlock) {
+        mainBlockData.forEach(function(singleBlock) {
+
+            const blockNameParameters = singleBlock[0].split("_");
+            const trackOfBlock = blockNameParameters[0];
 
             const block = document.createElement('div'); // kiekvienam duombazėj esančiam natų blokui sukuriamas html elementas (bus vizualus blokas)
             block.className = "noteBlock";
-            block.id = singleBlock.name;
-            block.style.left = singleBlock.start + 'px';
-            block.style.width = (singleBlock.end - singleBlock.start) + 'px';
-            block.style.top = (parseInt(singleBlock.track - 1) * trackHeight + 10) + 'px';
+            block.id = singleBlock[0];
+            block.style.left = singleBlock[1] / 10  + "px";
+            block.style.top = (((parseInt(trackOfBlock)) - 1) * trackHeight + 10) + "px";
 
             const blockHandle = document.createElement("div");
             blockHandle.className = 'blockHandle';
@@ -182,23 +186,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const blockDate = document.createElement("div");
             blockDate.className = "blockDate"
-            blockDate.innerHTML = singleBlock.date.replace(/_/g, " ");
-            blockDate.title = singleBlock.date.replace(/_/g, " ");
+            blockDate.innerHTML = blockNameParameters[2] + " " + blockNameParameters[3];
+            blockDate.title = blockNameParameters[2] + " " + blockNameParameters[3];
             block.appendChild(blockDate);
 
             sequencer.appendChild(block);
 
             makeDraggable(block);
 
-        });
-
-        // dar reikia: 
-        // V 1. kiekvienam blokui sukurt objektą, su vertėm (ne tik?): id, start, end
-        // V 2. blokus priskirt atitinkamiem trackam
-        // X 3. trackam priskirt instrumentus (kad tai rodytų selecte)
+        })
 
     }
-
+    
 
     // ========== NATŲ-BLOKŲ STUMDYMO PELE FUNKCIJA ==========
 
@@ -217,16 +216,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 newLeft = Math.round(newLeft / gridSize) * gridSize;
                 block.style.left = newLeft + 'px';
 
-                // === STUMDYTŲ NATŲ BLOKŲ DUOMENŲ PAKEITIMAS (blockInfo arrayuye) ===
+                // === STUMDYTŲ NATŲ BLOKŲ DUOMENŲ PAKEITIMAS (mainBlockData arrayuje) ===
 
-                // Randam pajudintojo natų bloko objecto indeksą blockInfo arrayuye (pagal objecto name property (aka pagal natų bloko pavadinimą))
-                const indexOfDraggedBlock = blockInfo.findIndex(singleBlock => singleBlock.name === block.id)
-                // Jeigu rado (o šjp turi rast), tai tada atitinkamai pakeičiami to natų bloko objecto start ir end vertės.
-                if (indexOfDraggedBlock !== -1) {
-                    blockInfo[indexOfDraggedBlock].end += newLeft - blockInfo[indexOfDraggedBlock].start;
-                    blockInfo[indexOfDraggedBlock].start = newLeft;
-                    // console.log(blockInfo);
-                }
+                const indexOfDraggedBlock = mainBlockData.findIndex(singleBlock => singleBlock[0] === block.id)   // mainBlockData = [[name, start, duration], [...], ...]
+                if (indexOfDraggedBlock !== -1) mainBlockData[indexOfDraggedBlock][1] = newLeft * 10;
             }
 
             function mouseUpHandler() {
@@ -268,46 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
     }
 
-
-
-
-
-    // ========== BLOKŲ ILGIO KAITYMO (BLOKŲ TAMPYMO) PELE FUNKCIJA ========== (Ji galų gale turės būti pašalinta!!)
-
-    function makeResizable(note, handle, trackId) {
-
-        let startX, startWidth;
-        handle.addEventListener('mousedown', (e) => {
-            e.stopPropagation();
-            startX = e.clientX;
-            startWidth = note.offsetWidth;
-
-            function mouseMoveHandler(e) {
-
-                const delta = e.clientX - startX;
-                let newWidth = Math.max(10, startWidth + delta);
-                newWidth = Math.round(newWidth / gridSize) * gridSize;
-                note.style.width = newWidth + 'px';
-
-                // Sequencerio blokų sąraše suranda patampyto bloko ID {BACKEND}
-                const n = trackNotes[trackId].find(n => n.id === note.id);
-
-                // Pakeičia patampyto bloko duration duomenis {BACKEND}
-                if (n) n.duration = newWidth;
-
-                sendAllNotesToBackend();
-
-            }
-
-            function mouseUpHandler() {
-                document.removeEventListener('mousemove', mouseMoveHandler);
-                document.removeEventListener('mouseup', mouseUpHandler);
-            }
-            document.addEventListener('mousemove', mouseMoveHandler);
-            document.addEventListener('mouseup', mouseUpHandler);
-        });
-    }
-
+    
 
     // ============================== PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS (play, pause, stop) ==============================
     // Playback mygtukai turėtų turėt dvi paskirtis: 1. vizualią (linijos judėjimo kaitymas);  2. grojimo (įrašo grojimas/nebegrojimas) {BACKEND}
@@ -394,99 +348,45 @@ document.addEventListener('DOMContentLoaded', () => {
     if (returnButton) returnButton.addEventListener('click', stopPlayback);
 
     
+
+
+
+
     // ============================== RYŠIO SU BACKENDU (TIESIOGIAI/NETIESIOGIAI) FUNKCIJOS ==============================
+
+
+
+    // ========== SEQUENCERIO KOMPOZICIJOS IŠSAUGOJIMAS (matyt bus vykdomas kai: 1. paspaudžiama play (grojimą gi vykdys);  2. kaip nors išeinama iš puslapio (pvz., pianorollan, bet ir main page'an)) ==========
     
-    // ========== JAU SUKURTŲ NATŲ BLOKŲ DUOMENŲ PASIĖMIMO FUNKCIJA ==========
-
-    function getAllNoteBlocks() {
-
-        fetch("http://localhost:6767/get_all_blocks")
-            .then(response => {
-                console.log(response);
-                // čia returnina reikiamus duomenis (blokų, ne responso!)
-                return response.json();
-            })
-            .then(blocks => {
-                noteBlockData = blocks;
-                placeBlocksInSequencer(noteBlockData);
-                console.log(noteBlockData);
-            })
-            .catch(err => console.warn('Backend sync failed:', err));
-
-    }
-
-    
-
-    // ========== NATŲ BLOKŲ DUOMENŲ PARUOŠIMAS SEQUENCERIO PUSLAPIUI (t.y. frontendui) ==========
-
-    function makeNoteBlockInfoObjects(noteBlockData) {
-
-        return Object.entries(noteBlockData).map(([blockName, notes]) => {
-
-            const starts = notes.map(note => note[2]);
-            const ends   = notes.map(note => note[3]);
-
-            const splitBlockName = blockName.split("_");
-            const trackId = splitBlockName[0];
-            const blockInstrument = splitBlockName[1];
-            const creationDate = splitBlockName[2] + "_" + splitBlockName[3].replace(/-/g, ":");
-
-            return {
-                name: blockName,
-                track: trackId,
-                instrument: blockInstrument,
-                date: creationDate,
-                start: (Math.min(...starts)) / 10,
-                end: (Math.max(...ends)) / 10
-            };
-        });
-
-    }
-
-
-
     const saveCompositionButton = document.getElementById("saveComposition");
     saveCompositionButton.addEventListener('click', saveMainComposition);
 
-    // ========== SEQUENCERIO KOMPOZICIJOS IŠSAUGOJIMAS (matyt bus vykdomas kai: 1. paspaudžiama play (grojimą gi vykdys);  2. kaip nors išeinama iš puslapio (pvz., pianorollan, bet ir main page'an)) ==========
-
     function saveMainComposition() {
 
-        let mainCompositionData = [];
-        console.log(blockInfo);
-
-        blockInfo.forEach(function(singleBlockInfo) {
-            mainCompositionData.push([singleBlockInfo.name, singleBlockInfo.start, singleBlockInfo.end]);
-        })
-
-        const preparedCompositionData = {sequence: mainCompositionData};
+        const preparedCompositionData = {sequence: mainBlockData};  // mainBlockData = [[name, start, duration], [x,y,z], ...]
         console.log(preparedCompositionData);
 
         fetch("http://localhost:6767/save_main", {
             method: 'POST',
-            headers: {"Content-Type" : "application/json"},
+            headers: {"Content-Type": "application/json"},
             body: JSON.stringify(preparedCompositionData)
         })
-        .then (response => response.json())
-        .then (data => console.log("Successfully saved:", data))
+        .then(response => response.json())
+        .then(data => console.log("Successfully saved:", data))
         .catch(error => console.warn("Save to backend failed:", error));
 
     }
+    
 
+    // ========== SEQUENCERIO KOMPOZICIJOS GAVIMAS IR PAKROVIMAS ==========
 
+    async function getMainComposition() {
 
-    // ============================== NATŲ-BLOKŲ DUOMENŲ SIUNTIMO BACKENDAN FUNKCIJA ==============================
-    /*
-    function sendAllNotesToBackend() {
+        const response = await fetch("http://localhost:6767/get_main")
+        const data  = await response.json();
+        mainBlockData = data;
+        console.log(mainBlockData); // [[name, start, duration], [.., .., ..], ...]
 
-        fetch('/update_tracks', {
-
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(trackNotes)
-
-        }).catch(err => console.warn('Backend sync failed:', err));
-
-    }*/
+    }
     
 });
