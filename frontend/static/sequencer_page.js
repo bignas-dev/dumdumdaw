@@ -115,14 +115,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         parametersButton.id = "parambutton";
         parametersButton.textContent = 'P';
 
+        // KOL KAS GAL TOKIA NEREIKALINGA, BET GAL REIKS JĄ SUGRĄŽINT IR SUDERINT SU OPENPIANOROLLFORTRACK FUNKCIJA, KAD VISI DUOMENYS TAIP PAT EITŲ
         // Funkcija, kad paspaudus (P)ianorollo mygtuką atsidarys to tracko pianoroll puslapis {BACKEND}
-        parametersButton.addEventListener('click', async () => {
+        /*parametersButton.addEventListener('click', async () => {
             const trackId = i + 1;
             const response = await fetch(`/api/get-pianoroll-url?track=${trackId}`);
             const data = await response.json();
             window.open(data.url, '_blank');        // opens new tab with pianoroll
-        });
-                                        
+        });*/
+        parametersButton.addEventListener('click', e => {
+            const trackId = track.dataset.trackId;
+            openPianorollForTrack(trackId);
+        });                                   
         // Volume mygtukas (dar nieko nedarantis)
         const volumeButton = document.createElement('button');
         volumeButton.className = "parametersVolumeButtons";
@@ -157,12 +161,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 
+    // ========== TAKTO LINIJŲ SUKŪRIMAS ==========
+
+    const barLineGapLengthPx = 40;
+
+    for (let i = 1; i < Math.floor(timelineWidthPx/barLineGapLengthPx); i++) {
+
+        let barLine = document.createElement("div");
+        barLine.className = "barLine";
+        barLine.style.left = (i*barLineGapLengthPx) + "px";
+        
+        if (i % 4 == 0) {
+            barLine.style.background = "#777777";
+        }
+        else {
+            barLine.style.background = "#333333";
+        }
+
+        sequencerContainer.appendChild(barLine);
+
+    }
+
+
 
     // ============================== SEQUENCERIO ESMINIŲ FUNKCIONALUMŲ DALIS (natų-blokų automatinis dėjimas, trynimas, stumdymas) ==============================
     // NOTE: Galų gale blokų įdėjimo pele ir blokų tampymo funkcijos turės būti pašalintos!
 
     // Vizualių blokų sukūrimo funkcija iškviečiama čia, nes pirma reikia, kad būtų sukurtas visas sequenceris
-    placeBlocksInSequencer(mainBlockData);
+    placeBlocksInSequencer(mainBlockData);      // [[name, start, duration], [.., .., ..], ...]
 
 
     // ========== ESAMŲ BLOKŲ VIZUALUS SUDĖLIOJIMAS SEQUENCERY ==========    
@@ -178,23 +204,34 @@ document.addEventListener('DOMContentLoaded', async () => {
             block.className = "noteBlock";
             block.id = singleBlock[0];
             block.style.left = singleBlock[1] / 10  + "px";
+            block.style.width = singleBlock[2] / 10  + "px";
             block.style.top = (((parseInt(trackOfBlock)) - 1) * trackHeight + 10) + "px";
 
             const blockHandle = document.createElement("div");
             blockHandle.className = 'blockHandle';
             block.appendChild(blockHandle);
 
+            const blockLabels = document.createElement("div");
+            blockLabels.className = "blockLabels";
+            block.appendChild(blockLabels);
+
             const blockDate = document.createElement("div");
             blockDate.className = "blockDate"
             blockDate.innerHTML = blockNameParameters[2] + " " + blockNameParameters[3];
             blockDate.title = blockNameParameters[2] + " " + blockNameParameters[3];
-            block.appendChild(blockDate);
+            blockLabels.appendChild(blockDate);
 
             sequencer.appendChild(block);
 
             makeDraggable(block);
 
-        })
+            blockLabels.addEventListener("dblclick", () => {
+                const blockId = block.id;
+                console.log(blockId);
+                openPianorollOfExistingBlock(blockId);
+            });
+
+        });
 
     }
     
@@ -238,8 +275,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     function openPianorollForTrack(trackId) {
 
-        saveMainComposition();
-
         let chosenInstrument = document.getElementById("selectInstrument" + trackId).value;
         
         if (!chosenInstrument) {
@@ -249,8 +284,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             setTimeout(function(){ selectOfInstrumentlessTrack.style.background = backgroundOfSelect }, 250);
             return;
         };
+
+        saveMainComposition();
         
-        fetch(`/api/get-pianoroll-url?track=${trackId}&instrument=${trackId}`)
+        fetch(`/api/get-pianoroll-url?track=${trackId}&instrument=${trackId}`)      // čia taip teko daryti (dvigubai trackId iš pradžių dėt), nes kitų paramų nenorėjo užfiksuot, dėl to darom taip ir tada pakeičiam kitą tą paramą į mum reikiamą (pvz., instrumentą)
             .then(res => res.json())
             .then(data => {
                 const finalUrl = new URL (data.url, window.location.origin);
@@ -259,6 +296,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             })
             .catch(err => console.error("Failed to open pianoroll:", err));
         
+    }
+
+
+    // ========== PASIRINKTO ESAMO NATŲ BLOKO PIANOROLLO ATIDARYMAS (redagavimui ar pan.) ==========
+
+    function openPianorollOfExistingBlock(blockId) {
+
+        saveMainComposition();
+
+        let blockNameParameters = blockId.split("_");
+
+        const trackId = blockNameParameters[0];
+        const blockInstrument = blockNameParameters[1]
+        // const blockName = blockNameParameters[2] + "_" + blockNameParameters[3];    // blockName — iš esmės bloko sukūrimo data
+
+        fetch(`/api/get-pianoroll-url?track=${trackId}&instrument=${trackId}&block=${trackId}`)
+            .then (res => res.json())
+            .then (data => {
+                const finalUrl = new URL (data.url, window.location.origin);
+                finalUrl.searchParams.set("instrument", blockInstrument);
+                finalUrl.searchParams.set("block", blockId);
+                window.open(finalUrl.href, "_self");
+            })
+            .catch(err => console.error("Failed to open pianoroll of block:", err));
+
     }
 
     

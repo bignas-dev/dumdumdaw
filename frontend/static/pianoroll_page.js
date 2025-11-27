@@ -1,10 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // iš pianoroll puslapio linko (kuris paduotas iš sequencer_page), ištraukiam track ir instrument query paramus (kitaip tariant, taip pasiimam track ID ir track instrument vertes iš sequencer puslapio)
-    const params = new URLSearchParams(window.location.search);
-    const trackId = params.get("track");
-    const instrument = params.get("instrument");
 
+
+    // ===== NATŲ ID GENERAVIMUI (KAD BŪTŲ UNIKALŪS IR PASTOVŪS, TAI BŪTINA) =====
+    let noteIdCounter = Date.now();
+    function generateNoteId () {
+        return "note_" + (noteIdCounter++);
+    }
+
+    
     // priskiriam JS kintamuosius esminiams html pianorollo elementams
     const pianorollContainer = document.getElementById("pianoroll-container");
     const pianoroll = document.getElementById('pianoroll');
@@ -14,16 +17,26 @@ document.addEventListener('DOMContentLoaded', () => {
     pitchLabelsBox.innerHTML = '';
     pianoroll.innerHTML = '';
 
+
+    // iš pianoroll puslapio linko (kuris paduotas iš sequencer_page), ištraukiam track ir instrument query paramus (kitaip tariant, taip pasiimam track ID ir track instrument vertes iš sequencer puslapio)
+    const params = new URLSearchParams(window.location.search);
+    const trackId = params.get("track");
+    const instrument = params.get("instrument");
+
+
     // Natų duomenų rinkimo kintamieji (KURIANT BACKENDĄ, GALI REIKT ŠIUOS KINTAMUOSIUS PAKEIST) {BACKEND}
-    let pianorollNotes = {};          // per-pitchRow note data
+    let pianorollNotes = {};          // per-pitchRow note data !!!!!!!!!!!!!!!!!!!!!!
+    
     let noteCounter = 0;
 
     // registras, kur laikomi naujausiai sukurtos natos duomenys (siųsimi backendui ir atgal gausimas jos wav failas)
     let singleNoteRegister = {};
-    // čia natų vardų ir jų id objectas (žodynėlis). Natų vardai reikalingi backendui
-    const noteNamesOfRows = {};
 
-    document.getElementById("instrumentName").innerHTML = instrument.toUpperCase();
+    // čia natų vardų ir jų id objectas (žodynėlis).
+    const noteNamesofRowsDict = {};     // bus konvertavimui: natos/pitch eilės numeris -> natos vardas  (backendui reikia natos vardo, o ne pianoroll natos eilės skaičiaus)
+    const rowsOfNoteNamesDict = {};     // bus konvertavimui: natos vardas -> natos/pitch eilės numeris  (pianorolle natų eilės užkoduotos skaičiais)
+
+    document.getElementById("instrumentName").innerHTML = instrument.toUpperCase();     // čia teksto laukelis, kuriame rodo instrumentą
 
 
     // ========================================= PIANOROLL KOMPONENTŲ DALIS =========================================
@@ -140,14 +153,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
         }
         pianorollNotes[i] = [];
-        noteNamesOfRows[i] = [pitchRowLabel.textContent.replace("#", "s")];       // susirenkam eilių ID ir jų notacijos pavadinimų objectą. # pakeičiam į s (nes taip backendas skaito) {BACKEND}
-        pitchLabelsBox.appendChild(pitchRowLabel);                  
+        noteNamesofRowsDict[i] = [pitchRowLabel.textContent.replace("#", "s")];       // susirenkam eilių ID ir jų notacijos pavadinimų objectą. # pakeičiam į s (nes taip backendas skaito) {BACKEND}
+        rowsOfNoteNamesDict[pitchRowLabel.textContent.replace("#", "s")] = i;         // tas pats kas ankstesnis, tik kad atvirkščiai. Irgi reikia konvertavimam.
+        
+        pitchLabelsBox.appendChild(pitchRowLabel);                 
 
     }
 
+    // NATŲ BLOKO PAĖMIMĄ TVARKOM NUO ČIA, NES MUM REIKIA JAU INDEKSUOTO pianorollNotes ( {0: [..], 1: [..], ..., 95: [..]} )
+
+    document.getElementById("blockName").innerHTML = "New Note Block";
+
+    let currentBlockStartPosInSequencer; // šito reiks tam, kad būtų nepamesti duomenys apie natų bloko start poziciją, nustatytą sequenceryje (ten gi galima ją stumdyti). Žr. getMainCompositionData funkciją.
+
+    let blockId;
+    let blockIdParameters;
+    let blockDate;
+    // čia jeigu atidaromas jau esamo bloko pianorollas, tai paima to block ID  (trackId_instrument_date(day)_time)
+    if (params.get("block")) {
+
+        blockId = params.get("block");
+        blockIdParameters = blockId.split("_");
+        blockDate = blockIdParameters[2] + " " + blockIdParameters[3];    // blockDate atstoja bloko vardą (iš vartotojo pusės). Tai iš esmės bloko sukūrimo data.
+
+        console.log(blockId);
+
+        // jeigu yra blockDate (jeigu tai jau esamo bloko pianorollas), tai įterpt bloko vardą (blockDate). Jeigu nėra — parašo "New Note Block" (nes tada skaitos naujas yra)
+        if (blockDate) document.getElementById("blockName").innerHTML = "<b>Block Name:&nbsp</b>" + blockDate;
+
+        getExistingBlockData();
+
+        getMainCompositionData();   // bus reikalinga realiai tik tam, kad būtų nepamesti duomenys apie natų bloko start poziciją sequenceryje (sequenceryje gi galima ją stumdyti). Kitu atveju, kiekvieną kartą išsaugant redaguotą tą natų bloką, jo start pozicija nusimuštų.
+
+    }
+
+
     // ========== TAKTO LINIJŲ SUKŪRIMAS ==========
 
-    barLineGapLengthPx = 25;
+    const barLineGapLengthPx = 40;
 
     for (let i = 1; i < Math.floor(timelineWidthPx/barLineGapLengthPx); i++) {
 
@@ -207,9 +250,11 @@ document.addEventListener('DOMContentLoaded', () => {
         left = Math.round(left / gridSize) * gridSize;
         const width = 50;
 
+        const ID = generateNoteId();
+
         const note = document.createElement('div');
         note.className = 'note';
-        note.id = 'note-' + noteCounter;
+        note.id = ID;
         note.style.left = left + 'px';
         note.style.width = width + 'px';
         const rowId = pitchRow.dataset.rowId;       // {BACKEND}
@@ -225,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
             note.remove();
             // Po right-click ištrina tą natą iš pianoroll natų objecto (sąrašo) {BACKEND}
             pianorollNotes[rowId] = pianorollNotes[rowId].filter(n => n.id !== note.id);
-            //sendAllNotesToBackend();
+            noteCounter--;
         });
 
         // Prideda natos html elementą į pianoroll elementą (nata - pianorollo child)
@@ -235,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // SENIAU BUVO TOKS: pianorollNotes[rowId].push({id: note.id, start: left, duration: width});
 
         // Į PIANOROLL NATŲ OBJECTĄ (sąrašą) PRIDEDA NAUJOS NATOS DUOMENIS: ID, INSTRUMENTAS, NATA, PRADŽIOS POZICIJA, PABAIGOS POZICIJA {BACKEND} !!!!!!!!
-        pianorollNotes[rowId].push({id: note.id, instrument: instrument, note: String(noteNamesOfRows[rowId]), start_time_ms: left*10, end_time_ms: (left+width)*10}); // !!! imam, kad 100px = 1000ms = 1s, dėl to *10
+        pianorollNotes[rowId].push({id: ID, instrument: instrument, note: String(noteNamesofRowsDict[rowId]), start_time_ms: left*10, end_time_ms: (left+width)*10}); // !!! imam, kad 100px = 1000ms = 1s, dėl to *10
 
         // console.log(pianorollNotes);
 
@@ -245,13 +290,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Incrementina natų counterį. Nors šitos funkcijos galų gale gal ir nereiks? {BACKEND}
         noteCounter++;
-        
-        //sendAllNotesToBackend();
 
         // === DĖL SUKURTOS NATOS PAGROJIMO {BACKEND} ===
-        singleNoteRegister = {"instrument" : instrument, "note": String(noteNamesOfRows[rowId])};
+        singleNoteRegister = {"instrument" : instrument, "note": String(noteNamesofRowsDict[rowId])};
         sendSingleNote();
-
         
     }
 
@@ -272,12 +314,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 note.style.left = newLeft + 'px';
 
                 // Pianoroll sąraše suranda pastumdytos natos ID {BACKEND}
-                const n = pianorollNotes[rowId].find(n => n.id === note.id);
-
+                const n = pianorollNotes[rowId].find(n => String(n.id) === String(note.id));
                 // Pakeičia pastumdytos natos start duomenis {BACKEND}
-                if (n) n.start_time_ms = newLeft * 10;
-                
-                //sendAllNotesToBackend();
+                if (n) {
+                    n.end_time_ms += newLeft*10 - n.start_time_ms;
+                    n.start_time_ms = newLeft * 10;
+                }
+                else console.log("Dragging: ID mismatch");
 
             }
             
@@ -308,12 +351,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 note.style.width = newWidth + 'px';
 
                 // Pianoroll sąraše suranda patampytos natos ID {BACKEND}
-                const n = pianorollNotes[rowId].find(n => n.id === note.id);
-
+                const n = pianorollNotes[rowId].find(n => String(n.id) === String(note.id));
                 // Pakeičia patampytos natos duration duomenis {BACKEND}
-                if (n) n.duration = newWidth;
-                
-                //sendAllNotesToBackend();
+                if (n) {
+                    let oldWidth = (n.end_time_ms - n.start_time_ms) / 10;
+                    n.end_time_ms += (newWidth - oldWidth) * 10;
+                }
+                else console.log("Resizing: ID mismatch");
 
             }
             
@@ -324,6 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.addEventListener('mousemove', mouseMoveHandler);
             document.addEventListener('mouseup', mouseUpHandler);
         });
+
     }
 
 
@@ -460,8 +505,82 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+    // ========== KONKRETAUS ESAMO BLOKO DUOMENŲ GAVIMAS (VYKSTA JEIGU ATIDAROMAS *JAU ESAMO* BLOKO PIANOROLLAS, TIPO PASPAUDUS ANT KONKRETAUS BLOKO SEQUENCERY) ==========
 
-    // ========== PIANOROLL KOMPOZICIJOS (= NATŲ BLOKO) IŠSAUGOJIMO BACKENDE FUNKCIJA ==========
+    function getExistingBlockData() {
+
+        // į pianorollNotes = {} dėsim duomenis.  pianorollNotes{0: [{id: .., instrument: .., note: .., start_time_ms: .., end_time_ms: ..}, ...], 1: [{...}, ...], ..., 95: [...]}   pianorollNotes[rowId].push({id: note.id, instrument: instrument, note: String(noteNamesofRowsDict[rowId]), start_time_ms: left*10, end_time_ms: (left+width)*10});
+
+        console.log(blockId);
+
+        fetch(`http://localhost:6767/get_block?name=${blockId}`)
+            .then (response => response.json())
+            .then (data => {
+                console.log(data);                              // data(natų duomenys): [[instrument, note, start_.., end_..], [a,b,c,d], [...], ...]
+                formatGottenBlockDataForPianoroll(data);
+            }).catch(error => console.warn("Block data retrieval failed:", error));
+
+    }
+
+    function formatGottenBlockDataForPianoroll(pianorollNoteData) {
+
+        pianorollNoteData.forEach(function(singleNoteData) {
+
+            ID = generateNoteId();
+
+            const noteDataToBeAdded = {
+                id: ID, 
+                instrument: singleNoteData[0], 
+                note: singleNoteData[1], 
+                start_time_ms: singleNoteData[2], 
+                end_time_ms: singleNoteData[3]
+            }
+            
+            pianorollNotes[rowsOfNoteNamesDict[singleNoteData[1]]].push(noteDataToBeAdded);
+
+            placeNotesToPianoroll(noteDataToBeAdded);
+            
+            noteCounter++;  // gi prisideda natų! tai reik ir counterį padidint
+
+        });
+
+    }
+
+    function placeNotesToPianoroll(singleNoteData) {
+
+        const note = document.createElement("div");
+        note.className = 'note';
+        note.id = singleNoteData.id;
+        note.style.left = (singleNoteData.start_time_ms / 10) + "px";
+        note.style.width = ((singleNoteData.end_time_ms - singleNoteData.start_time_ms) / 10) + "px";
+        const rowId = rowsOfNoteNamesDict[singleNoteData.note];
+        note.style.top = (parseInt(rowId) * pitchRowHeight + 2) + "px";
+
+        const handle = document.createElement("div");
+        handle.className = "note-handle";
+        note.appendChild(handle);
+
+        note.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            note.remove();
+            // Po right-click ištrina tą natą iš pianoroll natų objecto (sąrašo)
+            pianorollNotes[rowId] = pianorollNotes[rowId].filter(n => String(n.id) !== String(note.id));
+            noteCounter--;
+        });
+
+        pianoroll.appendChild(note);
+
+        makeDraggable(note, rowId);
+        makeResizable(note, handle, rowId);
+
+    }
+
+
+
+    // ========== JAU SENIAU SUKURTO NATŲ BLOKO (ir paredaguoto ar ne) IŠSAUGOJIMO BACKENDE FUNKCIJA ==========
+
+
+    // ========== NAUJOS PIANOROLL KOMPOZICIJOS (= NAUJO NATŲ BLOKO) IŠSAUGOJIMO BACKENDE FUNKCIJA ==========
 
     // save mygtukas
     const saveNoteBlockButton = document.getElementById("saveNoteBlock");
@@ -469,9 +588,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pianorollNotes) saveNoteBlockButton.addEventListener('click', saveNoteBlock);
 
     function saveNoteBlock() {
+        if (params.get("block")) saveEditedNoteBlockData();
+        else saveNewNoteBlockData();
+    }
 
-        // čia tam, kad jeigu pianorolle nesukurta natų, tai tada ir neišsaugotų pianorollo, nesiųstų backendui !!!!!
-        if (noteCounter === 0) return window.location.replace("/sequencer");
+
+    // ========== NENAUJOS (REDAGUOJAMOS) KOMPOZICIJOS IŠSAUGOJIMAS ==========
+
+    function saveEditedNoteBlockData() {
+
+        // if (noteCounter === 0) /*ištrint bloką ir grįžt sequencerin?*/
 
         // čia bus surenkami patys pianoroll natų duomenys
         let pianorollData = [];
@@ -485,10 +611,88 @@ document.addEventListener('DOMContentLoaded', () => {
             // pridėsim kiekvieną atskirą singleRowData elementą (atskirų natų duomenys) į pianorollData arrayų — bendran katilan
             singleRowData.forEach(element => {
 
-                // ištrinam id property, nes jo backendui nereikia (jo tik frontendui reikia)
-                delete element.id;
-                // pridedam atskirų natų duomenis į pianorollData (bendras visų pianoroll natų katilas)
-                pianorollData.push(Object.values(element))
+                // pridedam atskirų natų duomenis į pianorollData (bendras visų pianoroll natų katilas), išskyrus id, nes backendui jis nereikalingas
+                pianorollData.push([element.instrument, element.note, element.start_time_ms, element.end_time_ms])
+
+            });
+        }
+        console.log(pianorollData);
+
+        // gaunam esamo bloko pavadinimą
+        const noteBlockName = params.get("block");
+        console.log(noteBlockName);
+
+        // čia jau tas gatavas objectas, kurį siųsim backendui
+        const noteBlockData = {name: noteBlockName, sequence: pianorollData};
+        console.log(noteBlockData);
+
+        // siuntimas backendui (ir status atsako gavimas iš jo) 
+        fetch("http://localhost:6767/save_block", {
+            method: 'POST',
+            headers: {'Content-Type' : 'application/json'},
+            body: JSON.stringify(noteBlockData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Saved OK:", data);
+        })
+        .catch(err => console.warn("Backend sync failed:", err));
+
+        // === SIUNTIMAS Į MAIN ===
+        saveEditedNoteBlock(noteBlockData)
+
+    }
+
+    // ========== JAU ANKSČIAU SUKURTO (REDAGUOJAMO) BLOKO IŠSAUGOJIMAS ==========
+
+    function saveEditedNoteBlock(noteBlockData) {
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const originalBlockId = urlParams.get("block");
+
+        let mainBlockData = prepareNoteBlockDataForMain(noteBlockData);
+        console.log(mainBlockData);
+
+        const preparedBlockDataForMain = {block: [originalBlockId, currentBlockStartPosInSequencer, mainBlockData.duration_ms]};
+        console.log(preparedBlockDataForMain);
+        
+        fetch("http://localhost:6767/save_block_changes_to_main", {
+            method: "POST",
+            headers: {'Content-Type' : 'application/json'},
+            body: JSON.stringify(preparedBlockDataForMain)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Saved OK:", data);
+            window.location.replace("/sequencer");
+        })
+        .catch(err => console.warn("Backend sync failed:", err));
+
+    }
+
+
+
+    // ========== IŠSAUGOMAS NAUJAI SUKURTAS NATŲ BLOKAS (Į BLOCKS!, detalūs duomenys) ==========
+
+    function saveNewNoteBlockData() {
+
+        // čia tam, kad jeigu pianorolle nesukurta natų, tai tada ir neišsaugotų pianorollo, nesiųstų backendui !!!!!
+        //if (noteCounter === 0) return window.location.replace("/sequencer");
+
+        // čia bus surenkami patys pianoroll natų duomenys
+        let pianorollData = [];
+
+        // kiekvienos atskiros pianoroll eilutės natų objectai pridedami atskirai į pianorollData array (ale deconstructinam pianorollNotes, kuriame talpinti natų duomenys (nors dar su ID, kurio reik pianorollui, bet backendui ne))
+        for (let i = 0; i < pitchRowCount; i++) {
+
+            // paimam pianorollo i-tosios eilutės visų natų duomenis
+            let singleRowData = pianorollNotes[i];
+            
+            // pridėsim kiekvieną atskirą singleRowData elementą (atskirų natų duomenys) į pianorollData arrayų — bendran katilan
+            singleRowData.forEach(element => {
+
+                // pridedam atskirų natų duomenis į pianorollData (bendras visų pianoroll natų katilas), išskyrus id (backendui jis nereikalingas)
+                pianorollData.push([element.instrument, element.note, element.start_time_ms, element.end_time_ms]);
 
             });
         }
@@ -516,17 +720,25 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(response => response.json())
         .then(data => {
             console.log("Saved OK:", data);
-            // window.location.replace("/sequencer");
         })
         .catch(err => console.warn("Backend sync failed:", err));
 
 
-        // ===== SIUNTIMAS Į SAVE_MAIN =====
+        // ===== SIUNTIMAS Į MAIN =====
+
+        saveNewNoteBlock(noteBlockData);
+    }
+
+
+
+    // ========== NAUJO BLOKO IŠSAUGOJIMAS (Į MAIN!, mažiau detalūs duomenys) ==========
+
+    function saveNewNoteBlock(noteBlockData) {
 
         let mainBlockData = prepareNoteBlockDataForMain(noteBlockData);
         console.log(mainBlockData);
 
-        const preparedBlockDataForMain = {sequence: [mainBlockData.block_name, mainBlockData.start_time_ms, mainBlockData.duration_ms]};
+        const preparedBlockDataForMain = {block: [mainBlockData.block_name, 0, mainBlockData.duration_ms]};     // ne mainBlockData.start_time_ms, o 0, kadangi kitu atveju iškerpama natų bloko pradžia! O tai nėra gerai natų bloko vientisumui, po to kiltų bėdų su bloko grojimu
         console.log(preparedBlockDataForMain);
         
         fetch("http://localhost:6767/add_block_to_main", {
@@ -544,6 +756,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+
+
     // ========== NATŲ BLOKO DUOMENŲ PARUOŠIMAS SAUGOJIMUI Į SAVE_MAIN ==========
 
     function prepareNoteBlockDataForMain(noteBlockData) {
@@ -557,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const blockStartMs = Math.min(...noteStarts);
         const blockEndMs = Math.max(...noteEnds);
 
-        const blockDuration = blockEndMs - blockStartMs;
+        const blockDuration = blockEndMs; //  - blockStartMs;
 
         return {
             block_name: blockName,
@@ -567,7 +781,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     }
 
-    
+
+    // ========== VISOS SEQUENCERIO KOMPOZICIJOS DUOMENŲ GAVIMAS ==========
+    // (reikalingas esamo natų bloko start pozicijai sequencery gauti (gi natų bloką galima stumdyt sequencery! tai turi pakeist jo duomenis! nenumušt jų!), o į main duomenys siunčiami ir iš čia (pianorollo) gi)
+
+    function getMainCompositionData() {
+
+        const currentlyEditedBlockName = params.get("block");
+        /*
+        const response = fetch("http://localhost:6767/get_main")
+        const data  = response.json();                              // [[name, start, duration], [.., .., ..], ...]
+        */
+
+        fetch("http://localhost:6767/get_main")
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(singleBlockData => {
+                    if (singleBlockData[0] == currentlyEditedBlockName) currentBlockStartPosInSequencer = singleBlockData[1];
+                })
+            });
+
+    }
 
 
 });

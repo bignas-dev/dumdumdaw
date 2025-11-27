@@ -97,13 +97,21 @@ body {
     background: #e6aace;
     pointer-events: none;
     transform: translateX(0px);
+
+    z-index: 120;   /*turi būti virš blokų, ne po jais*/
+}
+
+/*TAKTO LINIJŲ STILIAI*/
+.barLine {
+    position: absolute;
+    top: 0;
+    width: 1px;
+    height: 100%;
 }
 
 
-
-
                 
-/*NATOS BLOKELIO STILIAI*/
+/*NATŲ BLOKELIO STILIAI*/
 .noteBlock {
     position: absolute;
     height: 80px;
@@ -116,22 +124,36 @@ body {
 
     overflow-wrap: anywhere;
     overflow: hidden;
+
+    z-index: 100;   /*kad natų blokas būtų virš takto linijų, o ne po jomis*/
 }
 
-/*NATOS BLOKELIO "RANKENOS" (viršuje) STILIAI*/
+/*NATŲ BLOKELIO "RANKENOS" (viršuje) STILIAI*/
 .blockHandle {
     width: 100%;
     height: 12px;
     background: #27ae60;
     cursor: move;
     border-bottom: 1px solid rgba(0,0,0,0.15);
+
+    z-index: 110;   /*šiek tiek aukštesnis už parent elemento noteBlock, kad neužsistotų*/
 }
 
-/*NATOS BLOKO DATOS (TEKSTAS DIV'E) STILIAI*/
+/*NATŲ BLOKO LABELŲ ELEMENTO (jame tik blockDate, kolkas) STILIAI*/
+.blockLabels {
+    height: 66px;   /*Kad užimtų likusį noteBlock aukštį (80- 12 - (kraštai) = 66)*/
+
+    z-index: 110;   /*šiek tiek aukštesnis už parent elemento noteBlock, kad neužsistotų*/
+}
+
+/*NATŲ BLOKO DATOS (TEKSTAS DIV'E) STILIAI*/
 .blockDate {
     color:#ffffff9d;
     font-size: 10px;
     padding: 2px;
+    pointer-events: none;
+
+    z-index: 110;   /*šiek tiek aukštesnis už parent elemento noteBlock, kad neužsistotų*/
 }
 
 

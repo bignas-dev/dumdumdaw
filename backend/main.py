@@ -39,8 +39,9 @@ class SaveBlockRequest(BaseModel):
 class SaveMainRequest(BaseModel):
     sequence: list[tuple[str, float, float]]
 
+
 class AddToMainRequest(BaseModel):
-    sequence: tuple[str, float, float]
+    block: tuple[str, float, float]
 
 
 def generate_music(
@@ -146,8 +147,17 @@ def save_block(request: SaveBlockRequest):
 
 @app.post("/add_block_to_main")
 def add_block_to_main(request: AddToMainRequest):
-    main.append(request.sequence)
+    main.append(request.block)
     return {"status": "added"}
+
+@app.post("/save_block_changes_to_main")
+def save_block_changes_to_main(request: AddToMainRequest):
+    for i, blockTuple in enumerate(main):
+        if blockTuple[0] == request.block[0]:
+            main[i] = request.block
+            break
+    return {"status": "edited", "main": main}
+
 
 
 @app.get("/get_block")

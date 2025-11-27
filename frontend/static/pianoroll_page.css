@@ -43,6 +43,18 @@ body {
     font-weight: bold;
 }
 
+#blockName {
+    background: white;
+    color: black;
+    height: 25px;
+    padding: 8px 8px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+}
+
 
 #playhead {
     position: absolute;
@@ -52,6 +64,8 @@ body {
     background: #e6aace;
     pointer-events: none;
     transform: translateX(0px); /*playhead animacijai translateX turės gi būt kaitaliojamas*/
+
+    z-index: 120;   /*turi būti virš blokų, ne po jais*/
 }
 
 /*TAKTO LINIJŲ STILIAI*/
@@ -75,6 +89,8 @@ body {
     align-items: center;
     border-radius: 2px;
     box-sizing: border-box;
+
+    z-index: 100;   /*kad natų blokas būtų virš takto linijų, o ne po jomis*/
 }
                 
 /*NATOS BLOKELIO "RANKENOS" (kairėje) STILIAI*/
@@ -84,6 +100,8 @@ body {
     background: #27ae60;
     cursor: ew-resize;
     border-left: 1px solid rgba(0,0,0,0.15);
+
+    z-index: 110;   /*šiek tiek aukštesnis už parent elemento noteBlock, kad neužsistotų*/
 }
 
 /*KAD APVALINT PIRMOSIOS PIANOROLL EILUTĖS TOP-LEFT KAMPĄ*/

@@ -115,6 +115,7 @@ def pianoroll_page(track: int):
             <button id="selectButton" class="button square" title="Select"><i class="material-icons" style="font-size:36px;">select_all</i></button>
             <button id="duplicateButton" class="button square" title="Duplicate"><i class="material-icons" style="font-size:36px;">content_copy</i></button>
             <p id="instrumentName"></p>
+            <p id="blockName"></p>
         </div>
     </header>
     
