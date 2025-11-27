@@ -23,30 +23,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ========== INSTRUMENTŲ DALIS ==========
 
-    // APIBRĖŽIAMAS DAW'O INSTRUMENTŲ SĄRAŠAS {BACKEND}
-    const instrumentList = [
-            {value: "", text: "Choose instrument"},
-            {value: "bass-electric", text: "Electric Bass"},
-            {value: "bassoon", text: "Bassoon"},
-            {value: "cello", text: "Cello"},
-            {value: "clarinet", text: "Clarinet"},
-            {value: "contrabass", text: "Contrabass"},
-            {value: "flute", text: "Flute"},
-            {value: "french-horn", text: "French Horn"},
-            {value: "guitar-acoustic", text: "Acoustic Guitar"},
-            {value: "guitar-electric", text: "Electric Guitar"},
-            {value: "guitar-nylon", text: "Nylon Guitar"},
-            {value: "harmonium", text: "Harmonium"},
-            {value: "harp", text: "Harp"},
-            {value: "organ", text: "Organ"},
-            {value: "piano", text: "Piano"},
-            {value: "saxophone", text: "Saxophone"},
-            {value: "trombone", text: "Trombone"},
-            {value: "trumpet", text: "Trumpet"},
-            {value: "tuba", text: "Tuba"},
-            {value: "violin", text: "Violin"},
-            {value: "xylophone", text: "Xylophone"},
-    ];             
+
+    // INICIJUOJAMAS DAW'O INSTRUMENTŲ SĄRAŠAS [reikalinga instrumentų dropdown meniui], JĮ UŽPILDYSIM IŠ BACKEND GAUTAIS DUOMENIMIS
+    let instrumentList = [
+            {value: "", text: "Choose instrument"}
+            // ....
+    ];
+    
+    await getInstrumentsAndAddToList();
+    
     //let tracksInstruments = {}; // trackui parinktų instrumentų duomenys
 
 
@@ -450,5 +435,47 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log(mainBlockData); // [[name, start, duration], [.., .., ..], ...]
 
     }
+
+
+    // ========== ESAMŲ INSTRUMENTŲ GAVIMAS (iš backend) ==========
+
+    async function getInstrumentsAndAddToList() {
+
+        // Instrumentų gavimas
+
+        const response = await fetch("http://localhost:6767/get_instruments")
+        const data = await response.json();
+        const instrumentsData = data;       // {instrumentas1 : ['C1', 'Cs1', ...], instrumentas2 : [...], ...}
+        console.log(instrumentsData);
+
+        // Instrumentų integravimas sequencer puslapio frontende
+
+        const instrumentArray = Object.keys(instrumentsData);
+        console.log(instrumentArray);
+
+        instrumentArray.forEach(instrument => {
+
+            // Paruošim instrumentų vardus (text: ...), kad prasidėtų didžiosiomis raidėmis ir pan.
+            let capitalizedInstrumentName = prepareInstrumentNamesForDisplay(instrument);   // padarys visus instrumento pavadinimo žodžius iš didžiosios raidės
+
+            instrumentList.push({value: instrument, text: capitalizedInstrumentName});
+        })
+    }
+
+    // ===== Instrumento vardų (rodysimų instrumentų dropdown meniuje) paruošimas (kad būtų iš didž. raidės) =====
+
+    function prepareInstrumentNamesForDisplay(instrument) {
+
+        let splitInstrName = instrument.split(" ")
+        let listOfWordsInInstrName = [];
+        splitInstrName.forEach(word => {
+            let capitalizedWord = word.charAt(0).toUpperCase() + word.slice(1);
+            listOfWordsInInstrName.push(capitalizedWord);
+        });
+        let capitalizedInstrumentName = listOfWordsInInstrName.join(" ");
+
+        return capitalizedInstrumentName;
+    }
+
     
 });
