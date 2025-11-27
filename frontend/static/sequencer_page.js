@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
+
+    let mainAudio;
     
     let mainBlockData = [];
 
@@ -315,94 +317,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     
 
-    // ============================== PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS (play, pause, stop) ==============================
-    // Playback mygtukai turėtų turėt dvi paskirtis: 1. vizualią (linijos judėjimo kaitymas);  2. grojimo (įrašo grojimas/nebegrojimas) {BACKEND}
-
-    let playhead = document.getElementById("playhead");
-    let isPlaying = false;
-    let startTimestamp = null;                              // laiko momentas, kai buvo pradėtas grojimas
-    let pauseOffset = 0;                                    // how far into the track we've played (ms)
-    let pixelsPerMs = 0.1;                                  // Playback linijos judėjimo greitis (px/ms)
-    const totalDuration = timelineWidthPx / pixelsPerMs;    // Pilnas playback grojimo ilgis (priklauso nuo pianoroll ilgio ir judėjimo greičio). KOL KAS kintamasis yra CONST, bet jeigu padarytumėm automatinį pianorollo prasiplėtimą (kai natos artėja prie galo), tada bus LET.
-
-    // ========== LINIJOS JUDĖJIMO FUNKCIJA ==========
-
-    function updatePlayhead(timestamp) {
-
-        if (!isPlaying) return;
-
-        if (!startTimestamp) {
-            startTimestamp = timestamp;
-        }
-
-        const elapsed = timestamp - startTimestamp + pauseOffset;  
-        const x = elapsed * pixelsPerMs;
-
-        playhead.style.transform = `translateX(${x}px)`;
-
-        if (elapsed < totalDuration) {
-            requestAnimationFrame(updatePlayhead);
-        } else {
-            stopPlayback(); // jeigu pasiekė totalDuration pabaigą
-        }
-    }
-
-    // ========== LINIJOS PALEIDIMO JUDĖTI FUNKCIJA (PLAY) ==========
-
-    function playPlayback() {
-
-        if (isPlaying) return;
-        isPlaying = true;
-        startTimestamp = null;  // reset internal timer, but NOT pauseOffset
-
-        requestAnimationFrame(updatePlayhead);
-    }
-
-    // ========== LINIJOS SUSTABDYMO FUNKCIJA (PAUSE) ==========
-
-    function pausePlayback() {
-
-        if (!isPlaying) return; // jeigu negroja, tai šios funkcijos ir nevykdyt
-        isPlaying = false;
-        const currentTime = performance.now();  // paimamas laikas, praėjęs nuo apskritai pradžios (nuo puslapio pakrovimo pradžios?)
-        // čia kad nevykdytų skaičiavimų ant null
-        if (startTimestamp !== null) {
-            pauseOffset += currentTime - startTimestamp;
-        }
-    }
-
-    // ========== LINIJOS SUSTABDYMO IR GRĄŽINIMO ATGAL FUNKCIJA (STOP) ==========
-
-    function stopPlayback() {
-
-        isPlaying = false;
-        pauseOffset = 0;
-        startTimestamp = null;
-        playhead.style.transform = `translateX(0px)`;
-
-    }
-
-    // ========== LINIJOS JUDĖJIMO SCROLLINANT (horizontaliai) SUTVARKYMAS ==========
-
-    sequencerContainer.addEventListener("scroll", () => {
-        const offset = sequencerContainer.scrollLeft;
-        playhead.style.left = `${-offset}px`;
-    });
-
-    // ========== PLAY, PAUSE, STOP MYGTUKŲ FUNKCIONALUMAS ==========
-
-    const playButton = document.getElementById("playButton");
-    const pauseButton = document.getElementById("pauseButton");
-    const returnButton = document.getElementById("returnButton");
-
-    if (playButton) playButton.addEventListener('click', playPlayback);
-    if (pauseButton) pauseButton.addEventListener('click', pausePlayback);
-    if (returnButton) returnButton.addEventListener('click', stopPlayback);
-
-    
-
-
-
 
     // ============================== RYŠIO SU BACKENDU (TIESIOGIAI/NETIESIOGIAI) FUNKCIJOS ==============================
 
@@ -494,5 +408,120 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     }
 
+
+
+
+   
+
+    function getAudioForPlay() {
+        fetch("http://localhost:6767/play_main", {
+            method: 'POST'
+        })
+        .then(async response => {
+            if (!response.ok) throw new Error ("Main audio retrieval error " + response.status);
+            // perskaityt WAV duomenis kaip blob
+            const audioBlob = await response.blob();
+            // WAV paverst laikinan URL'an
+            const audioUrl = URL.createObjectURL(audioBlob);
+            console.log(audioUrl);
+
+            playmainAudio(audioUrl);
+        })
+    }
+
+    function playmainAudio(audioUrl) {
+        mainAudio = new Audio(audioUrl);
+        mainAudio.play();
+    }
+
+
+
+
+    // ============================== PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS (play, pause, stop) ==============================
+    // Playback mygtukai turėtų turėt dvi paskirtis: 1. vizualią (linijos judėjimo kaitymas);  2. grojimo (įrašo grojimas/nebegrojimas) {BACKEND}
+
+    let playhead = document.getElementById("playhead");
+    let isPlaying = false;
+    let startTimestamp = null;                              // laiko momentas, kai buvo pradėtas grojimas
+    let pauseOffset = 0;                                    // how far into the track we've played (ms)
+    let pixelsPerMs = 0.1;                                  // Playback linijos judėjimo greitis (px/ms)
+    const totalDuration = timelineWidthPx / pixelsPerMs;    // Pilnas playback grojimo ilgis (priklauso nuo pianoroll ilgio ir judėjimo greičio). KOL KAS kintamasis yra CONST, bet jeigu padarytumėm automatinį pianorollo prasiplėtimą (kai natos artėja prie galo), tada bus LET.
+
+    // ========== LINIJOS JUDĖJIMO FUNKCIJA ==========
     
+    function updatePlayhead(timestamp) {
+
+        if (!isPlaying) return;
+
+        if (!startTimestamp) {
+            startTimestamp = timestamp;
+        }
+
+        const elapsed = timestamp - startTimestamp + pauseOffset;  
+        const x = elapsed * pixelsPerMs;
+
+        playhead.style.transform = `translateX(${x}px)`;
+
+        if (elapsed < totalDuration) {
+            requestAnimationFrame(updatePlayhead);
+        } else {
+            stopPlayback(); // jeigu pasiekė totalDuration pabaigą
+        }
+    }
+
+    // ========== LINIJOS PALEIDIMO JUDĖTI FUNKCIJA (PLAY) ==========
+
+    function playPlayback() {
+
+        getAudioForPlay();  // gaut įrašą iš backendo
+
+        if (isPlaying) return;
+        isPlaying = true;
+        startTimestamp = null;  // reset internal timer, but NOT pauseOffset
+
+        requestAnimationFrame(updatePlayhead);
+    }
+
+    // ========== LINIJOS SUSTABDYMO FUNKCIJA (PAUSE) ==========
+
+    function pausePlayback() {
+
+        if (!isPlaying) return; // jeigu negroja, tai šios funkcijos ir nevykdyt
+        isPlaying = false;
+        const currentTime = performance.now();  // paimamas laikas, praėjęs nuo apskritai pradžios (nuo puslapio pakrovimo pradžios?)
+        // čia kad nevykdytų skaičiavimų ant null
+        if (startTimestamp !== null) {
+            pauseOffset += currentTime - startTimestamp;
+        }
+    }
+
+    // ========== LINIJOS SUSTABDYMO IR GRĄŽINIMO ATGAL FUNKCIJA (STOP) ==========
+
+    function stopPlayback() {
+
+        isPlaying = false;
+        pauseOffset = 0;
+        startTimestamp = null;
+        playhead.style.transform = `translateX(0px)`;
+
+    }
+
+    // ========== LINIJOS JUDĖJIMO SCROLLINANT (horizontaliai) SUTVARKYMAS ==========
+
+    sequencerContainer.addEventListener("scroll", () => {
+        const offset = sequencerContainer.scrollLeft;
+        playhead.style.left = `${-offset}px`;
+    });
+
+    // ========== PLAY, PAUSE, STOP MYGTUKŲ FUNKCIONALUMAS ==========
+
+    const playButton = document.getElementById("playButton");
+    const pauseButton = document.getElementById("pauseButton");
+    const returnButton = document.getElementById("returnButton");
+
+    if (playButton) playButton.addEventListener('click', playPlayback);
+    if (pauseButton) pauseButton.addEventListener('click', pausePlayback);
+    if (returnButton) returnButton.addEventListener('click', stopPlayback);
+
+
 });

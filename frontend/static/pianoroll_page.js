@@ -1,5 +1,7 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
+    // GARSO GROJIKAS !!!!!
+    //const audioPlayer = new AudioPlayer();
 
     // ===== NATŲ ID GENERAVIMUI (KAD BŪTŲ UNIKALŪS IR PASTOVŪS, TAI BŪTINA) =====
     let noteIdCounter = Date.now();
@@ -23,10 +25,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const trackId = params.get("track");
     const instrument = params.get("instrument");
 
+    // gaunam DAWe esamų instrumentų duomenis, kad galėtumėm žinot, kokias natas iš tikrųjų turi instrumentas. Pagal tai atfiltruosim pianorollo eilutes.
+    let existingInstrumentNotes = [];
+    await getInstrumentNoteData();
+    // console.log(existingInstrumentNotes);
 
     // Natų duomenų rinkimo kintamieji (KURIANT BACKENDĄ, GALI REIKT ŠIUOS KINTAMUOSIUS PAKEIST) {BACKEND}
     let pianorollNotes = {};          // per-pitchRow note data !!!!!!!!!!!!!!!!!!!!!!
     
+    // natų bloke esančių natų skaičius (fiksuojamas jis pridedant ar trinant natas)
     let noteCounter = 0;
 
     // registras, kur laikomi naujausiai sukurtos natos duomenys (siųsimi backendui ir atgal gausimas jos wav failas)
@@ -53,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pianorollContainer.style.height = (pitchRowCount * pitchRowHeight) + 15 + "px";         // BE ŠITO APIBRĖŽIMO, BENDRAI PIANOROLL EILIŲ MATOSI TIK TIEK AUKŠČIO, KIEK YRA JO NUSTATYTA VISO PIANOROLL MATOMAM SCROLL LANGE (pvz., 550px), O NE VISAS (pvz., 1920px=96*20) 
     pitchLabelsBox.style.height = (pitchRowCount * pitchRowHeight) + 15 + "px";             // BE ŠITO APIBRĖŽIMO, LABELSDIV ELEMENTO AUKŠTIS KAŽKODĖL PATS SUMAŽĖJA (KIEKVIENAS LABEL BOX UŽIMA 95,8PX, O NE 100PX), TAMPA NELYGUS TRACK EILUČIŲ AUKŠČIUI. Čia aiškiai apibrėžiam, kad pitchLabelsBox (html id="labels") aukštis yra 1000px (100*10)          
 
+    let idsOfAllRows = [];
 
     // ========== NATŲ EILIŲ (pitch row) SUKŪRIMO DALIS (didelis for loopas) ==========
 
@@ -70,8 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
         pitchRow.style.background = (i % 2 === 0) ? '#0d1821' : '#142532';     // tracko fono spalva (dvi spalvos, nes kas antras trackas yra tamsesnis, kas antras yra šviesesnis)
         pitchRow.style.borderBottom = '1px solid #333';
         pianoroll.appendChild(pitchRow);
-        // Double clicko event listener (po double click iškviečiama addNoteToTrack funkcija — sukuriama nata)
-        pitchRow.addEventListener('dblclick', e => addNoteToTrack(pitchRow, e));
+
+        //console.log(idsOfRowsOfExistingNotes);
         // Natų eilių numeracija pianorollNotes Objecte {'i' : [...]}
         //pianorollNotes[i] = [];
 
@@ -156,9 +164,49 @@ document.addEventListener('DOMContentLoaded', () => {
         noteNamesofRowsDict[i] = [pitchRowLabel.textContent.replace("#", "s")];       // susirenkam eilių ID ir jų notacijos pavadinimų objectą. # pakeičiam į s (nes taip backendas skaito) {BACKEND}
         rowsOfNoteNamesDict[pitchRowLabel.textContent.replace("#", "s")] = i;         // tas pats kas ankstesnis, tik kad atvirkščiai. Irgi reikia konvertavimam.
         
-        pitchLabelsBox.appendChild(pitchRowLabel);                 
+        pitchLabelsBox.appendChild(pitchRowLabel); 
+
+        idsOfAllRows.push(i);   // surinksim visų eilių id sąrašą (ir po to atfiltruosim eiles, kurios neturi esamo instrumento natos (garso))
 
     }
+    
+    let idsOfRowsOfExistingNotes = [];
+    getIdsOfRowsOfExistingNotes();
+
+    changePropertiesOfRowsOfNonexistentNotes();
+
+
+    // ===== Surenkami ID tų eilių, kurių nata YRA tarp parinktojo instrumento natų. =====
+
+    function getIdsOfRowsOfExistingNotes() {
+
+        idsOfAllRows.forEach(rowId => {
+            if (existingInstrumentNotes.includes(String(noteNamesofRowsDict[rowId]))) idsOfRowsOfExistingNotes.push(rowId);
+        })
+        console.log(idsOfRowsOfExistingNotes);
+    }
+
+    
+    // ===== Nuima natų pridėjimo funkciją ir pakeičia fono spalvą tų eilių, kurių natos NĖRA tarp parinktojo instrumento natų. =====
+
+    function changePropertiesOfRowsOfNonexistentNotes() {
+
+        for (let i = 0; i < pitchRowCount; i++) {
+
+            const pitchRow = document.querySelector(`[data-row-id="${i}"]`);    // pašalina pačią pianoroll lauko eilę
+            // document.getElementById(`pitchRow-${rowId+1}-label`);  // pašalina tos pianoroll eilutės label elementą
+
+            if (idsOfRowsOfExistingNotes.includes(i)) {
+                // Double clicko event listener (po double click iškviečiama addNoteToTrack funkcija — sukuriama nata)
+                pitchRow.addEventListener('dblclick', e => addNoteToTrack(pitchRow, e));
+            }
+            else {
+                pitchRow.style.background = (i % 2 === 0) ? "#222222" : "#2a2a2a";
+            }
+        }
+    }
+
+
 
     // NATŲ BLOKO PAĖMIMĄ TVARKOM NUO ČIA, NES MUM REIKIA JAU INDEKSUOTO pianorollNotes ( {0: [..], 1: [..], ..., 95: [..]} )
 
@@ -371,90 +419,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     }
 
-
-    // ============================== PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS (play, pause, stop) ==============================
-    // Playback mygtukai turėtų turėt dvi paskirtis: 1. vizualią (linijos judėjimo kaitymas);  2. grojimo (įrašo grojimas/nebegrojimas) {BACKEND}
-
-    let playhead = document.getElementById("playhead");
-    let isPlaying = false;
-    let startTimestamp = null;                              // laiko momentas, kai buvo pradėtas grojimas
-    let pauseOffset = 0;                                    // how far into the pitchRow we've played (ms)
-    let pixelsPerMs = 0.1;                                  // Playback linijos judėjimo greitis (px/ms)
-    const totalDuration = timelineWidthPx / pixelsPerMs;    // Pilnas playback grojimo ilgis (priklauso nuo pianoroll ilgio ir judėjimo greičio). KOL KAS kintamasis yra CONST, bet jeigu padarytumėm automatinį pianorollo prasiplėtimą (kai natos artėja prie galo), tada bus LET.
-
-    // ========== LINIJOS JUDĖJIMO FUNKCIJA ==========
-
-    function updatePlayhead(timestamp) {
-        
-        if (!isPlaying) return;
-
-        if (!startTimestamp) {
-            startTimestamp = timestamp;
-        }
-
-        const elapsed = timestamp - startTimestamp + pauseOffset;  
-        const x = elapsed * pixelsPerMs;
-
-        playhead.style.transform = `translateX(${x}px)`;
-
-        if (elapsed < totalDuration) {
-            requestAnimationFrame(updatePlayhead);
-        } else {
-            stopPlayback(); // jeigu pasiekė totalDuration pabaigą
-        }
-    }
-
-    // ========== LINIJOS PALEIDIMO JUDĖTI FUNKCIJA (PLAY) ==========
-
-    function playPlayback() {
-        
-        if (isPlaying) return;
-        isPlaying = true;
-        startTimestamp = null;  // reset internal timer, but NOT pauseOffset
-
-        requestAnimationFrame(updatePlayhead);
-    }
-
-    // ========== LINIJOS SUSTABDYMO FUNKCIJA (PAUSE) ==========
-
-    function pausePlayback() {
-        
-        if (!isPlaying) return; // jeigu negroja, tai šios funkcijos ir nevykdyt
-        isPlaying = false;
-        const currentTime = performance.now(); // paimamas laikas, praėjęs nuo apskritai pradžios (nuo puslapio pakrovimo pradžios?)
-        // čia kad nevykdytų skaičiavimų ant null
-        if (startTimestamp !== null) {
-            pauseOffset += currentTime - startTimestamp;
-        }
-    }
-
-    // ========== LINIJOS SUSTABDYMO IR GRĄŽINIMO ATGAL FUNKCIJA (STOP) ==========
-
-    function stopPlayback() {
-
-        isPlaying = false;
-        pauseOffset = 0;
-        startTimestamp = null;
-        playhead.style.transform = `translateX(0px)`;
-        
-    }
-
-    // ========== LINIJOS JUDĖJIMO SCROLLINANT (horizontaliai) SUTVARKYMAS ==========
-
-    pianorollContainer.addEventListener("scroll", () => {
-        const offset = pianorollContainer.scrollLeft;
-        playhead.style.left = `${-offset}px`;
-    });
-
-    // ========== PLAY, PAUSE, STOP MYGTUKŲ FUNKCIONALUMAS ==========
-
-    const playButton = document.getElementById("playButton");
-    const pauseButton = document.getElementById("pauseButton");
-    const returnButton = document.getElementById("returnButton");
-
-    if (playButton) playButton.addEventListener('click', playPlayback);
-    if (pauseButton) pauseButton.addEventListener('click', pausePlayback);
-    if (returnButton) returnButton.addEventListener('click', stopPlayback);
 
 
 
@@ -677,8 +641,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveNewNoteBlockData() {
 
         // čia tam, kad jeigu pianorolle nesukurta natų, tai tada ir neišsaugotų pianorollo, nesiųstų backendui !!!!!
-        if (noteCounter === 0) return window.location.replace("/sequencer");
-
+        if (noteCounter === 0) {
+            // removeNoteBlockFromMain();
+            return window.location.replace("/sequencer");
+        }
         // čia bus surenkami patys pianoroll natų duomenys
         let pianorollData = [];
 
@@ -819,6 +785,106 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(error => console.warn("Track instrument add failed:", error));
 
     }
+
+    // ========== ==========
+
+    async function getInstrumentNoteData() {
+
+        const response = await fetch("http://localhost:6767/get_instruments")
+        const data = await response.json();                                     // data: {instrument1 : ["C3", "Cs3", ...], instrument2 : [...], ...}
+        existingInstrumentNotes = data[instrument];
+
+    }
+
+
+
+
+
+    // ============================== PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS (play, pause, stop) ==============================
+    // Playback mygtukai turėtų turėt dvi paskirtis: 1. vizualią (linijos judėjimo kaitymas);  2. grojimo (įrašo grojimas/nebegrojimas) {BACKEND}
+
+    let playhead = document.getElementById("playhead");
+    let isPlaying = false;
+    let startTimestamp = null;                              // laiko momentas, kai buvo pradėtas grojimas
+    let pauseOffset = 0;                                    // how far into the pitchRow we've played (ms)
+    let pixelsPerMs = 0.1;                                  // Playback linijos judėjimo greitis (px/ms)
+    const totalDuration = timelineWidthPx / pixelsPerMs;    // Pilnas playback grojimo ilgis (priklauso nuo pianoroll ilgio ir judėjimo greičio). KOL KAS kintamasis yra CONST, bet jeigu padarytumėm automatinį pianorollo prasiplėtimą (kai natos artėja prie galo), tada bus LET.
+
+    // ========== LINIJOS JUDĖJIMO FUNKCIJA ==========
+
+    function updatePlayhead(timestamp) {
+        
+        if (!isPlaying) return;
+
+        if (!startTimestamp) {
+            startTimestamp = timestamp;
+        }
+
+        const elapsed = timestamp - startTimestamp + pauseOffset;  
+        const x = elapsed * pixelsPerMs;
+
+        playhead.style.transform = `translateX(${x}px)`;
+
+        if (elapsed < totalDuration) {
+            requestAnimationFrame(updatePlayhead);
+        } else {
+            stopPlayback(); // jeigu pasiekė totalDuration pabaigą
+        }
+    }
+
+    // ========== LINIJOS PALEIDIMO JUDĖTI FUNKCIJA (PLAY) ==========
+
+    function playPianoroll() {
+        
+        if (isPlaying) return;
+        isPlaying = true;
+        startTimestamp = null;  // reset internal timer, but NOT pauseOffset
+
+        requestAnimationFrame(updatePlayhead);
+    }
+
+    // ========== LINIJOS SUSTABDYMO FUNKCIJA (PAUSE) ==========
+
+    function pausePlayback() {
+        
+        if (!isPlaying) return; // jeigu negroja, tai šios funkcijos ir nevykdyt
+        isPlaying = false;
+        const currentTime = performance.now(); // paimamas laikas, praėjęs nuo apskritai pradžios (nuo puslapio pakrovimo pradžios?)
+        // čia kad nevykdytų skaičiavimų ant null
+        if (startTimestamp !== null) {
+            pauseOffset += currentTime - startTimestamp;
+        }
+    }
+
+    // ========== LINIJOS SUSTABDYMO IR GRĄŽINIMO ATGAL FUNKCIJA (STOP) ==========
+
+    function stopPlayback() {
+
+        isPlaying = false;
+        pauseOffset = 0;
+        startTimestamp = null;
+        playhead.style.transform = `translateX(0px)`;
+        
+    }
+
+    // ========== LINIJOS JUDĖJIMO SCROLLINANT (horizontaliai) SUTVARKYMAS ==========
+
+    pianorollContainer.addEventListener("scroll", () => {
+        const offset = pianorollContainer.scrollLeft;
+        playhead.style.left = `${-offset}px`;
+    });
+
+    // ========== PLAY, PAUSE, STOP MYGTUKŲ FUNKCIONALUMAS ==========
+
+    const playButton = document.getElementById("playButton");
+    const pauseButton = document.getElementById("pauseButton");
+    const returnButton = document.getElementById("returnButton");
+
+    if (playButton) playButton.addEventListener('click', playPianoroll);
+    if (pauseButton) pauseButton.addEventListener('click', pausePlayback);
+    if (returnButton) returnButton.addEventListener('click', stopPlayback);
+
+    
 
 
 });

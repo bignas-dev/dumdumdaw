@@ -51,6 +51,8 @@ def sequencer_page():
     ''')
 
     sequencerKodas = ui.add_body_html("""
+    
+    <audio id="audio-player"></audio>
 
     <header>
         <div style="margin: auto; width: 950px; margin-top: 50px; display: flex; flex-direction: row; justify-content: center; align-items: flex-end; gap: 10px;">
