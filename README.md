@@ -10,7 +10,7 @@ git clone https://github.com/adomas457/Meilus-Co-Sound.git
 cd Meilus-Co-Sound
 ```
 
-2. Install [uv]("https://docs.astral.sh/uv/getting-started/installation/")
+2. Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
 
 3. Install and pin python 3.12.3
 ```bash
