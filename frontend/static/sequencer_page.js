@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
-
+    // AUDIO OBJEKTUI
     let mainAudio;
+    // Booleanas, nurodantis audio krovimo (iš backendo) padėtį:
+    let isAudioLoading = false;
     
     let mainBlockData = [];
 
@@ -41,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ========================================= SEQUENCER KOMPONENTŲ DALIS =========================================
 
-    const trackCount = 10;         // number of tracks
+    const trackCount = 15;         // number of tracks
     const trackHeight = 100;       // per-track height
     const timelineWidthPx = 10000; // timeline width
     const gridSize = 10;        // grid'o plotis (pikseliais) = minimalus natos elemento ilgis = minimalus natos elemento pastūmimo kelias
@@ -414,31 +416,40 @@ document.addEventListener('DOMContentLoaded', async () => {
    
 
     function getAudioForPlay() {
-        fetch("http://localhost:6767/play_main", {
+
+        if (mainAudio || isAudioLoading) return Promise.resolve();                  // Promise — žymi async funkcijos užbaigimą
+
+        isAudioLoading = true;
+
+        return fetch("http://localhost:6767/play_main", {
             method: 'POST'
         })
         .then(async response => {
             if (!response.ok) throw new Error ("Main audio retrieval error " + response.status);
-            // perskaityt WAV duomenis kaip blob
-            const audioBlob = await response.blob();
-            // WAV paverst laikinan URL'an
-            const audioUrl = URL.createObjectURL(audioBlob);
-            console.log(audioUrl);
 
-            playmainAudio(audioUrl);
+            const audioBlob = await response.blob();                                // perskaityt WAV duomenis kaip blob
+
+            if (mainAudio && mainAudio.src) URL.revokeObjectURL(mainAudio.src);     // pašalint senesnio įrašo URLą, jeigu jau yra naujas įrašas
+
+            const audioUrl = URL.createObjectURL(audioBlob);                        // WAV įrašą paverst laikinan audio objekto URL'an
+            mainAudio = new Audio(audioUrl);                                        // sukuriamas audio objektas
+            
+            isAudioLoading = false;
+
+            console.log("Audio loaded and ready for playback.");
         })
+        .catch(error => {
+            isAudioLoading = false;
+            console.warn("Error playing main sequence:", error);
+            throw error;
+        });
+            
+        
     }
 
-    function playmainAudio(audioUrl) {
-        mainAudio = new Audio(audioUrl);
-        mainAudio.play();
-    }
 
-
-
-
-    // ============================== PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS (play, pause, stop) ==============================
-    // Playback mygtukai turėtų turėt dvi paskirtis: 1. vizualią (linijos judėjimo kaitymas);  2. grojimo (įrašo grojimas/nebegrojimas) {BACKEND}
+    // ============================== GROJIMO IR PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS (play, pause, stop) ==============================
+    // Playback mygtukai turėtų turėt dvi paskirtis: 1. vizualią (linijos judėjimo kaitymas);  2. grojimo (įrašo grojimas/pristabdymas/sustabdymas) {BACKEND}
 
     let playhead = document.getElementById("playhead");
     let isPlaying = false;
@@ -446,6 +457,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let pauseOffset = 0;                                    // how far into the track we've played (ms)
     let pixelsPerMs = 0.1;                                  // Playback linijos judėjimo greitis (px/ms)
     const totalDuration = timelineWidthPx / pixelsPerMs;    // Pilnas playback grojimo ilgis (priklauso nuo pianoroll ilgio ir judėjimo greičio). KOL KAS kintamasis yra CONST, bet jeigu padarytumėm automatinį pianorollo prasiplėtimą (kai natos artėja prie galo), tada bus LET.
+
 
     // ========== LINIJOS JUDĖJIMO FUNKCIJA ==========
     
@@ -469,13 +481,82 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+
+    // ========== GROJIMO FUNKCIJA (ĮRAŠAS + LINIJA) ==========
+
+    function playPlayback() {
+
+        if (isPlaying) return;
+        
+        // Bandyt pakraut įrašą
+        getAudioForPlay()
+            .then(() => {
+                // Nuo čia kodas tęsis tik tada, kai bus pakrautas įrašas (mainAudio audio objektas)
+                if (mainAudio) {
+                    // Prasidės įrašo grojimas
+                    mainAudio.play();
+
+                    // Prasidės linijos judėjimas
+                    isPlaying = true;
+                    startTimestamp = null; 
+                    requestAnimationFrame(updatePlayhead);
+                } else {
+                    // Fallback if loading failed silently (should be caught by catch block)
+                    console.error("Playback failed: mainAudio is not initialized.");
+                }
+            })
+            .catch(error => {
+                // Handle any error from the fetch/load process
+                console.error("Could not start playback because of a loading error:", error);
+            });
+    }
+
+    // ========== PAUZĖS FUNKCIJA (ĮRAŠAS + LINIJA) ==========
+
+    function pausePlayback() {
+
+        if (!isPlaying || !mainAudio) return;
+
+        mainAudio.pause();      // sustabdo įrašą, nenumušant esamo grojimo laiko
+        
+        // Linijai:
+
+        isPlaying = false;
+        const currentTime = performance.now();  // paimamas laikas, praėjęs nuo apskritai pradžios (nuo puslapio pakrovimo pradžios?)
+        
+        // čia kad nevykdytų skaičiavimų ant null
+        if (startTimestamp !== null) {
+            pauseOffset += currentTime - startTimestamp;
+        }
+
+    }
+
+    // ========== STABDYMO FUNKCIJA (ĮRAŠAS + LINIJA) ==========
+
+    function stopPlayback() {
+
+        if (!mainAudio) return;
+
+        mainAudio.pause();
+        mainAudio.currentTime = 0;      // perstato grojimo laiką į 0
+        
+        // Linijai:
+
+        isPlaying = false;
+        pauseOffset = 0;
+        startTimestamp = null;
+        playhead.style.transform = `translateX(0px)`;
+        
+    }
+
+
+    /*
     // ========== LINIJOS PALEIDIMO JUDĖTI FUNKCIJA (PLAY) ==========
 
     function playPlayback() {
 
-        getAudioForPlay();  // gaut įrašą iš backendo
-
         if (isPlaying) return;
+        getAudioForPlay();  // gaut įrašą iš backendo
         isPlaying = true;
         startTimestamp = null;  // reset internal timer, but NOT pauseOffset
 
@@ -487,6 +568,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function pausePlayback() {
 
         if (!isPlaying) return; // jeigu negroja, tai šios funkcijos ir nevykdyt
+        mainAudio.pause();
         isPlaying = false;
         const currentTime = performance.now();  // paimamas laikas, praėjęs nuo apskritai pradžios (nuo puslapio pakrovimo pradžios?)
         // čia kad nevykdytų skaičiavimų ant null
@@ -499,12 +581,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function stopPlayback() {
 
+        mainAudio.pause();
+        mainAudio.currentTime = 0;
         isPlaying = false;
         pauseOffset = 0;
         startTimestamp = null;
         playhead.style.transform = `translateX(0px)`;
 
-    }
+    }*/
 
     // ========== LINIJOS JUDĖJIMO SCROLLINANT (horizontaliai) SUTVARKYMAS ==========
 
@@ -522,6 +606,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (playButton) playButton.addEventListener('click', playPlayback);
     if (pauseButton) pauseButton.addEventListener('click', pausePlayback);
     if (returnButton) returnButton.addEventListener('click', stopPlayback);
+
 
 
 });
