@@ -44,6 +44,11 @@ class AddToMainRequest(BaseModel):
     block: tuple[str, float, float]
 
 
+class AddTrackInstrument(BaseModel):
+    track_nr: int
+    instrument: str
+
+
 def generate_music(
     sequence: list[tuple[str, str, float, float]],
 ):
@@ -108,6 +113,7 @@ def generate_music(
 
 blocks = {}
 main = []
+track_instruments = {}
 
 
 @app.get("/get_instruments")
@@ -117,13 +123,13 @@ def get_instruments():
     if not SAMPLES_DIR.exists() or not SAMPLES_DIR.is_dir():
         return instrument_data
 
-    for instrument in sorted(SAMPLES_DIR.iterdir(), key=lambda p: p.name.lower()):
+    for instrument in sorted(SAMPLES_DIR.iterdir(), key=lambda p: p.name):
         if not instrument.is_dir():
             continue
 
         instrument_name = instrument.name
 
-        for note in sorted(instrument.iterdir(), key=lambda p: p.name.lower()):
+        for note in sorted(instrument.iterdir(), key=lambda p: p.name):
             if not note.is_file():
                 continue
 
@@ -138,9 +144,19 @@ def get_note(request: NoteRequest):
     return generate_music([(request.instrument, request.note, 0, 500)])
 
 
+@app.post("/add_track_instrument")
+def add_track_instrument(request: AddTrackInstrument):
+    track_instruments[request.track_nr] = request.instrument
+    return {"status": "added"}
+
+
+@app.get("/get_track_instruments")
+def get_track_instruments():
+    return track_instruments
+
+
 @app.post("/save_block")
 def save_block(request: SaveBlockRequest):
-    global blocks
     blocks[request.name] = request.sequence
     return {"status": "saved"}
 
@@ -150,6 +166,7 @@ def add_block_to_main(request: AddToMainRequest):
     main.append(request.block)
     return {"status": "added"}
 
+
 @app.post("/save_block_changes_to_main")
 def save_block_changes_to_main(request: AddToMainRequest):
     for i, blockTuple in enumerate(main):
@@ -157,7 +174,6 @@ def save_block_changes_to_main(request: AddToMainRequest):
             main[i] = request.block
             break
     return {"status": "edited", "main": main}
-
 
 
 @app.get("/get_block")
