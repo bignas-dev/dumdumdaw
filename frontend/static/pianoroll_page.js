@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // ========== NENAUJOS (REDAGUOJAMOS) KOMPOZICIJOS IŠSAUGOJIMAS ==========
+    // ========== NENAUJO (REDAGUOJAMO) NATŲ BLOKO IŠSAUGOJIMAS ==========
 
     function saveEditedNoteBlockData() {
 
@@ -643,7 +643,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     }
 
-    // ========== JAU ANKSČIAU SUKURTO (REDAGUOJAMO) BLOKO IŠSAUGOJIMAS ==========
+    // ========== JAU *ANKSČIAU SUKURTO* (REDAGUOJAMO) BLOKO IŠSAUGOJIMAS ==========
 
     function saveEditedNoteBlock(noteBlockData) {
 
@@ -672,12 +672,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    // ========== IŠSAUGOMAS NAUJAI SUKURTAS NATŲ BLOKAS (Į BLOCKS!, detalūs duomenys) ==========
+    // ========== IŠSAUGOMAS *NAUJAI SUKURTAS* NATŲ BLOKAS (Į BLOCKS!, detalūs duomenys) ==========
 
     function saveNewNoteBlockData() {
 
         // čia tam, kad jeigu pianorolle nesukurta natų, tai tada ir neišsaugotų pianorollo, nesiųstų backendui !!!!!
-        //if (noteCounter === 0) return window.location.replace("/sequencer");
+        if (noteCounter === 0) return window.location.replace("/sequencer");
 
         // čia bus surenkami patys pianoroll natų duomenys
         let pianorollData = [];
@@ -724,11 +724,14 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => console.warn("Backend sync failed:", err));
 
 
+        // ===== Nustato trackui parinktą instrumentą (jo pakeist nebeleisim) =====
+
+        setTrackInstrument(trackId, instrument);
+
         // ===== SIUNTIMAS Į MAIN =====
 
         saveNewNoteBlock(noteBlockData);
     }
-
 
 
     // ========== NAUJO BLOKO IŠSAUGOJIMAS (Į MAIN!, mažiau detalūs duomenys) ==========
@@ -754,8 +757,6 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(err => console.warn("Backend sync failed:", err));
 
     }
-
-
 
 
     // ========== NATŲ BLOKO DUOMENŲ PARUOŠIMAS SAUGOJIMUI Į SAVE_MAIN ==========
@@ -800,6 +801,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (singleBlockData[0] == currentlyEditedBlockName) currentBlockStartPosInSequencer = singleBlockData[1];
                 })
             });
+
+    }
+
+
+    // ========== INSTRUMENTO PRISKYRIMAS TRACKUI (vykdoma pianorolle, o ne sequencery, nes jeigu būtų išsaugotas tuščias pianorollas, kad instrumento tam trackui nepriskirtų (nes jame blockų išsaugotų jokių nėra! tuščias pianorollas neišsaugomas)) ==========
+
+    function setTrackInstrument(trackId, chosenInstrument) {
+
+        fetch("http://localhost:6767/add_track_instrument", {
+            method: "POST",
+            headers: {"Content-Type" : "application/json"},
+            body: JSON.stringify({track_nr: trackId, instrument: chosenInstrument})
+        })
+        .then(response => response.json())
+        .then(status => console.log(status))
+        .catch(error => console.warn("Track instrument add failed:", error));
 
     }
 

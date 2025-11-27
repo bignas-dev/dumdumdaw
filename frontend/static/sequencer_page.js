@@ -30,10 +30,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             // ....
     ];
     
-    await getInstrumentsAndAddToList();
+    await getInstrumentsAndAddToList();     // iš backendo gaunamas visų esamų instrumentų sąrašas ir visi instrumentai pridedami į frontende esantį instrumentList arrayų
     
-    //let tracksInstruments = {}; // trackui parinktų instrumentų duomenys
+    let trackInstruments = {};              // trackam priskirtų instrumentų duomenys
 
+    await getTrackInstruments();            // prideda esamus duomenis apie trackų instrumentų priskyrimus
 
 
     // ========================================= SEQUENCER KOMPONENTŲ DALIS =========================================
@@ -100,14 +101,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         parametersButton.id = "parambutton";
         parametersButton.textContent = 'P';
 
-        // KOL KAS GAL TOKIA NEREIKALINGA, BET GAL REIKS JĄ SUGRĄŽINT IR SUDERINT SU OPENPIANOROLLFORTRACK FUNKCIJA, KAD VISI DUOMENYS TAIP PAT EITŲ
-        // Funkcija, kad paspaudus (P)ianorollo mygtuką atsidarys to tracko pianoroll puslapis {BACKEND}
-        /*parametersButton.addEventListener('click', async () => {
-            const trackId = i + 1;
-            const response = await fetch(`/api/get-pianoroll-url?track=${trackId}`);
-            const data = await response.json();
-            window.open(data.url, '_blank');        // opens new tab with pianoroll
-        });*/
         parametersButton.addEventListener('click', e => {
             const trackId = track.dataset.trackId;
             openPianorollForTrack(trackId);
@@ -129,13 +122,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         selectInstrument.name = 'selectInstrument' + (i+1);
         selectInstrument.id = 'selectInstrument' + (i+1);
 
-        // Pridedamas kiekvienas instrumento pasirinkimas į instrumentų pasirinkimo sąrašą {BACKEND}
-        instrumentList.forEach(opt => {
-        const instrumentOption = document.createElement('option');
-        instrumentOption.value = opt.value;
-        instrumentOption.textContent = opt.text;
-        selectInstrument.appendChild(instrumentOption);
-        });
+        if (trackInstruments[i+1]) {
+            // Jeigu trackui instrumentas jau parinktas, tai pridedamas tik to instrumento pasirinkimas.
+            const instrumentOption = document.createElement("option");
+            instrumentOption.value = trackInstruments[i+1];
+            instrumentOption.textContent = prepareInstrumentNameForDisplay(trackInstruments[i+1]);
+            selectInstrument.appendChild(instrumentOption);
+        }
+        else {
+            // Pridedamas kiekvienas instrumento pasirinkimas į instrumentų pasirinkimo sąrašą {BACKEND}
+            instrumentList.forEach(opt => {
+            const instrumentOption = document.createElement('option');
+            instrumentOption.value = opt.value;
+            instrumentOption.textContent = opt.text;
+            selectInstrument.appendChild(instrumentOption);
+            });
+        }
+        
 
         // Į bendrą parent label box konteinerį sudedami visi jo elementai, ir pats label box į visų labelų bendrą konteinerį
         labelBox.appendChild(label)
@@ -270,6 +273,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         };
 
+
+        // Išsaugo sequencerio kompoziciją
         saveMainComposition();
         
         fetch(`/api/get-pianoroll-url?track=${trackId}&instrument=${trackId}`)      // čia taip teko daryti (dvigubai trackId iš pradžių dėt), nes kitų paramų nenorėjo užfiksuot, dėl to darom taip ir tada pakeičiam kitą tą paramą į mum reikiamą (pvz., instrumentą)
@@ -456,7 +461,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         instrumentArray.forEach(instrument => {
 
             // Paruošim instrumentų vardus (text: ...), kad prasidėtų didžiosiomis raidėmis ir pan.
-            let capitalizedInstrumentName = prepareInstrumentNamesForDisplay(instrument);   // padarys visus instrumento pavadinimo žodžius iš didžiosios raidės
+            let capitalizedInstrumentName = prepareInstrumentNameForDisplay(instrument);   // padarys visus instrumento pavadinimo žodžius iš didžiosios raidės
 
             instrumentList.push({value: instrument, text: capitalizedInstrumentName});
         })
@@ -464,7 +469,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ===== Instrumento vardų (rodysimų instrumentų dropdown meniuje) paruošimas (kad būtų iš didž. raidės) =====
 
-    function prepareInstrumentNamesForDisplay(instrument) {
+    function prepareInstrumentNameForDisplay(instrument) {
 
         let splitInstrName = instrument.split(" ")
         let listOfWordsInInstrName = [];
@@ -475,6 +480,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         let capitalizedInstrumentName = listOfWordsInInstrName.join(" ");
 
         return capitalizedInstrumentName;
+    }
+
+
+
+    // ========== TRACKAM PRISKIRTŲ INSTRUMENTŲ SĄRAŠO GAVIMAS ==========
+
+    async function getTrackInstruments() {
+
+        await fetch("http://localhost:6767/get_track_instruments")
+                    .then (response => response.json())
+                    .then (data => trackInstruments = data)
+
     }
 
     
