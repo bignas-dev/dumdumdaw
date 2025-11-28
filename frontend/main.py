@@ -60,13 +60,13 @@ def sequencer_page():
             <button id="playButton" class="button square" title="Play"><i class="material-icons" style="font-size:36px;">play_arrow</i></button>
             <button id="pauseButton" class="button square" title="Pause"><i class="material-icons" style="font-size:36px;">pause</i></button>
             <button id="returnButton" class="button square" title="Return"><i class="material-icons" style="font-size:36px;">stop</i></button>
-            <button id="selectButton" class="button square" title="Select"><i class="material-icons" style="font-size:36px;">select_all</i></button>
-            <button id="duplicateButton" class="button square" title="Duplicate"><i class="material-icons" style="font-size:36px;">content_copy</i></button>
-            <button id="exportButton" class="button text" title="Export">Export</button>
-            <span class="tempo-labelL">Tempo:</span>
+            <!--<button id="selectButton" class="button square" title="Select"><i class="material-icons" style="font-size:36px;">select_all</i></button>
+            <button id="duplicateButton" class="button square" title="Duplicate"><i class="material-icons" style="font-size:36px;">content_copy</i></button>-->
+            <button id="saveComposition" class="button text">Save</button>
+            <!--<span class="tempo-labelL">Tempo:</span>
             <input class="tempo-input" type="number" value="120" step = "5"/>
-            <span class="tempo-labelR">bpm</span>
-            <button id="saveComposition" style="background: white;">Save</button>
+            <span class="tempo-labelR">bpm</span>-->
+            <button id="exportButton" class="button text" title="Export">Export</button>
         </div>
     </header>
                                       
@@ -114,10 +114,11 @@ def pianoroll_page(track: int):
             <button id="playButton" class="button square" title="Play"><i class="material-icons" style="font-size:36px;">play_arrow</i></button>
             <button id="pauseButton" class="button square" title="Pause"><i class="material-icons" style="font-size:36px;">pause</i></button>
             <button id="returnButton" class="button square" title="Return"><i class="material-icons" style="font-size:36px;">stop</i></button>
-            <button id="selectButton" class="button square" title="Select"><i class="material-icons" style="font-size:36px;">select_all</i></button>
-            <button id="duplicateButton" class="button square" title="Duplicate"><i class="material-icons" style="font-size:36px;">content_copy</i></button>
+            <!-- <button id="selectButton" class="button square" title="Select"><i class="material-icons" style="font-size:36px;">select_all</i></button>
+            <button id="duplicateButton" class="button square" title="Duplicate"><i class="material-icons" style="font-size:36px;">content_copy</i></button>-->
             <p id="instrumentName"></p>
             <p id="blockName"></p>
+            <button id="saveNoteBlock" class="button text">Save</button>
         </div>
     </header>
     
@@ -141,7 +142,6 @@ def pianoroll_page(track: int):
             <div id="playhead"></div>
         </div>
     </div>
-    <button id="saveNoteBlock" style="background:white;">Save</button>
                                  
                                                                      
     <script src="/static/pianoroll_page.js"></script>                               

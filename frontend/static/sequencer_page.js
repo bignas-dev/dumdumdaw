@@ -413,9 +413,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-   
+    // ============================== ĮRAŠŲ FUNKCIONALUMAS (ĮRAŠŲ GAVIMAS, GROJIMAS (PLAY, PAUSE, STOP), EKSPORTAVIMAS (ATSISIUNTIMAS)) ============================== 
 
-    function getAudioForPlay() {
+
+    // ========== KOMPOZICIJOS ĮRAŠO GAVIMAS IŠ BACKENDO ==========
+
+    async function getAudioForPlay() {
 
         if (mainAudio || isAudioLoading) return Promise.resolve();                  // Promise — žymi async funkcijos užbaigimą
 
@@ -437,6 +440,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             isAudioLoading = false;
 
             console.log("Audio loaded and ready for playback.");
+
+            /*const downloadButton = document.getElementById("exportButton");
+            if (downloadButton) {
+                downloadButton.addEventListener('click', downloadMainAudio);
+            }*/
+
         })
         .catch(error => {
             isAudioLoading = false;
@@ -448,7 +457,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 
-    // ============================== GROJIMO IR PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS (play, pause, stop) ==============================
+    // ==================== GROJIMO IR PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS (play, pause, stop) ====================
     // Playback mygtukai turėtų turėt dvi paskirtis: 1. vizualią (linijos judėjimo kaitymas);  2. grojimo (įrašo grojimas/pristabdymas/sustabdymas) {BACKEND}
 
     let playhead = document.getElementById("playhead");
@@ -550,46 +559,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 
-    /*
-    // ========== LINIJOS PALEIDIMO JUDĖTI FUNKCIJA (PLAY) ==========
-
-    function playPlayback() {
-
-        if (isPlaying) return;
-        getAudioForPlay();  // gaut įrašą iš backendo
-        isPlaying = true;
-        startTimestamp = null;  // reset internal timer, but NOT pauseOffset
-
-        requestAnimationFrame(updatePlayhead);
-    }
-
-    // ========== LINIJOS SUSTABDYMO FUNKCIJA (PAUSE) ==========
-
-    function pausePlayback() {
-
-        if (!isPlaying) return; // jeigu negroja, tai šios funkcijos ir nevykdyt
-        mainAudio.pause();
-        isPlaying = false;
-        const currentTime = performance.now();  // paimamas laikas, praėjęs nuo apskritai pradžios (nuo puslapio pakrovimo pradžios?)
-        // čia kad nevykdytų skaičiavimų ant null
-        if (startTimestamp !== null) {
-            pauseOffset += currentTime - startTimestamp;
-        }
-    }
-
-    // ========== LINIJOS SUSTABDYMO IR GRĄŽINIMO ATGAL FUNKCIJA (STOP) ==========
-
-    function stopPlayback() {
-
-        mainAudio.pause();
-        mainAudio.currentTime = 0;
-        isPlaying = false;
-        pauseOffset = 0;
-        startTimestamp = null;
-        playhead.style.transform = `translateX(0px)`;
-
-    }*/
-
     // ========== LINIJOS JUDĖJIMO SCROLLINANT (horizontaliai) SUTVARKYMAS ==========
 
     sequencerContainer.addEventListener("scroll", () => {
@@ -607,6 +576,59 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (pauseButton) pauseButton.addEventListener('click', pausePlayback);
     if (returnButton) returnButton.addEventListener('click', stopPlayback);
 
+
+    // ========== KOMPOZICIJOS ĮRAŠO ATSISIUNTIMAS !!!!!!! ==========
+
+    function downloadMainAudio() {
+        console.log("Starting audio download...");
+
+        // Send the POST request to render the full sequence
+        fetch("http://localhost:6767/play_main", {
+            method: 'POST',
+        })
+        .then(async response => {
+            if (!response.ok) {
+                // Check if the server returned an error (e.g., 400 Bad Request, 404 Not Found)
+                const errorText = await response.text();
+                throw new Error(`Download failed with status ${response.status}: ${errorText}`);
+            }
+            
+            // 1. Get the response as a Blob (binary data)
+            const audioBlob = await response.blob();
+            
+            // 2. Create a temporary URL for the Blob
+            // The browser can treat this URL as a local file.
+            const audioUrl = URL.createObjectURL(audioBlob);
+            
+            // 3. Create a temporary <a> element
+            const downloadLink = document.createElement('a');
+            
+            // 4. Set the link's href to the temporary URL
+            downloadLink.href = audioUrl;
+            
+            // 5. Set the download attribute to specify the default filename
+            // This filename is the one returned by your FastAPI backend: filename="music.wav"
+            downloadLink.download = 'composition.wav'; 
+            
+            // 6. Simulate a click to start the download
+            downloadLink.click();
+            
+            // 7. Clean up the temporary URL to free up memory
+            // This is important for performance.
+            URL.revokeObjectURL(audioUrl);
+            
+            console.log("Download initiated for my_composition.wav");
+        })
+        .catch(error => {
+            console.error('Error during audio download:', error);
+            alert(`Failed to download audio: ${error.message}`);
+        });
+    }
+
+    // Attach this function to your download button
+    const downloadButton = document.getElementById("exportButton");
+    downloadButton.addEventListener('click', downloadMainAudio);
+    
 
 
 });
