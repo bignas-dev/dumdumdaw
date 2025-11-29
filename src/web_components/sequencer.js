@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     let mainBlockData = [];
 
-    await getMainComposition();     // Be "await", natų blokų duomenys nėra laiku užkraunami. Dėl to ir visa dengianti addeventlistener funkcija turi async.
+    await getMainComposition();      // Be "await", natų blokų duomenys nėra laiku užkraunami. Dėl to ir visa dengianti addeventlistener funkcija turi async.
     console.log(mainBlockData);
 
     
@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     sequencer.innerHTML = '';
 
     // Natų-blokų duomenų rinkimo kintamieji (KURIANT BACKENDĄ, GALI REIKT ŠIUOS KINTAMUOSIUS PAKEIST) {BACKEND}
-    let trackNotes = {};            // per-track note data
-    let noteCounter = 0;            // pradinis natų-blokų skaičius (0)
+    let trackNotes = {};             // per-track note data
+    let noteCounter = 0;             // pradinis natų-blokų skaičius (0)
 
 
     // ========== INSTRUMENTŲ DALIS ==========
@@ -34,30 +34,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             // ....
     ];
     
-    await getInstrumentsAndAddToList();     // iš backendo gaunamas visų esamų instrumentų sąrašas ir visi instrumentai pridedami į frontende esantį instrumentList arrayų
+    await getInstrumentsAndAddToList();      // iš backendo gaunamas visų esamų instrumentų sąrašas ir visi instrumentai pridedami į frontende esantį instrumentList arrayų
     
-    let trackInstruments = {};              // trackam priskirtų instrumentų duomenys
+    let trackInstruments = {};               // trackam priskirtų instrumentų duomenys
 
-    await getTrackInstruments();            // prideda esamus duomenis apie trackų instrumentų priskyrimus
+    await getTrackInstruments();             // prideda esamus duomenis apie trackų instrumentų priskyrimus
 
 
     // ========================================= SEQUENCER KOMPONENTŲ DALIS =========================================
 
-    const trackCount = 15;         // number of tracks
-    const trackHeight = 100;       // per-track height
+    const trackCount = 15;          // number of tracks
+    const trackHeight = 100;        // per-track height
     const timelineWidthPx = 10000; // timeline width
-    const gridSize = 10;        // grid'o plotis (pikseliais) = minimalus natos elemento ilgis = minimalus natos elemento pastūmimo kelias
+    const gridSize = 10;         // grid'o plotis (pikseliais) = minimalus natos elemento ilgis = minimalus natos elemento pastūmimo kelias
 
     // Sequencerio html elementų aukščiai
-    sequencer.style.height = (trackCount * trackHeight) + 'px';                 // NUSTATOMAS VISO SEQUENCER ELEMENTO AUKŠTIS (priklauso nuo trackų skaičiaus)
-    sequencerContainer.style.height = (trackCount * trackHeight) + 15 + 'px';   // BE ŠITO APIBRĖŽIMO, BENDRAI TRACK EILIŲ MATOSI TIK TIEK PIKSELIŲ, KIEK YRA NUSTATYTA VISO SEQUENCER MATOMAM SCROLL LANGE (pvz., 550px), O NE VISI (pvz., 1000px=10*100) 
-    labelsDiv.style.height = (trackCount * trackHeight) + 15 + 'px';            // BE ŠITO APIBRĖŽIMO, LABELSDIV ELEMENTO AUKŠTIS KAŽKODĖL PATS SUMAŽĖJA (KIEKVIENAS LABEL BOX UŽIMA 95,8PX, O NE 100PX), TAMPA NELYGUS TRACK EILUČIŲ AUKŠČIUI. Čia aiškiai apibrėžiam, kad labelsDiv (html id="labels") aukštis yra 1000px (100*10)
-                                
+    sequencer.style.height = (trackCount * trackHeight) + 'px';              // NUSTATOMAS VISO SEQUENCER ELEMENTO AUKŠTIS (priklauso nuo trackų skaičiaus)
+    sequencerContainer.style.height = (trackCount * trackHeight) + 15 + 'px';    // BE ŠITO APIBRĖŽIMO, BENDRAI TRACK EILIŲ MATOSI TIK TIEK PIKSELIŲ, KIEK YRA NUSTATYTA VISO SEQUENCER MATOMAM SCROLL LANGE (pvz., 550px), O NE VISI (pvz., 1000px=10*100) 
+    labelsDiv.style.height = (trackCount * trackHeight) + 15 + 'px';             // BE ŠITO APIBRĖŽIMO, LABELSDIV ELEMENTO AUKŠTIS KAŽKODĖL PATS SUMAŽĖJA (KIEKVIENAS LABEL BOX UŽIMA 95,8PX, O NE 100PX), TAMPA NELYGUS TRACK EILIUČIŲ AUKŠČIUI. Čia aiškiai apibrėžiam, kad labelsDiv (html id="labels") aukštis yra 1000px (100*10)
+                                    
 
     // ========== TRACKŲ SUKŪRIMO DALIS (didelis for loopas) ==========
 
     for (let i = 0; i < trackCount; i++) {
-        
+            
         // Trackai
         const track = document.createElement('div');
         track.className = 'track';
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         track.style.top = (i * trackHeight) + 'px';
         track.style.width = timelineWidthPx + 'px';
         track.style.height = trackHeight + 'px';
-        track.style.background = (i % 2 === 0) ? '#0d1821' : '#142532';     // tracko fono spalva (dvi spalvos, nes kas antras trackas yra tamsesnis, kas antras yra šviesesnis)
+        track.style.background = (i % 2 === 0) ? '#0d1821' : '#142532';      // tracko fono spalva (dvi spalvos, nes kas antras trackas yra tamsesnis, kas antras yra šviesesnis)
         track.style.borderBottom = '1px solid #333';
         sequencer.appendChild(track);
         
@@ -77,28 +77,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             
         });
         // Trackų numeracija trackNotes Objecte {'i' : [...]} {BACKEND}
-        trackNotes[i] = [];         // paruošia vietą i-tojo tracko natoms trackNotes sąraše
+        trackNotes[i] = [];          // paruošia vietą i-tojo tracko natoms trackNotes sąraše
 
         // Labelai 
                                         
-        // Labelo elementų "konteineris" (div elementas)                             
+        // Labelo elementų "konteineris" (div elementas)                          
         const labelBox = document.createElement('div');
         labelBox.setAttribute("id", "track-" + (i+1) + "-box");
         labelBox.style.height = trackHeight + 'px';
         labelBox.style.background = '#253644';
         labelBox.style.borderBottom = '1px solid #333';
         labelBox.style.padding = '10px 10px';
+        labelBox.style.display = "flex";
+        labelBox.style.flexDirection = "column";
+
         
-        // Labelo pats tekstas (pvz., Track 1)                              
+        // Labelo pats tekstas (pvz., Track 1)                                
         const label = document.createElement('div');
-        label.setAttribute("id", "track-" + (i+1) + "-label");                 // prie kiekvieno label langelio elemento prideda html ID atributą (tikslas — tokiu būdu būtų galima customizint būtent 'Track 1' label langelį, kad būtų galima jo top-left kampą padaryti apvalų (apvalint TIK bendro visų labelų elemento top-left kampą nepavyksta, nes tuo atveju tą apvalintą kampą tiesiog užstoja "Track 1" label langelis, jo nesimato; dėl to reikia apvalint IR bendro visų labelų elemento top-left kampą, IR "Track 1" label langelio top-left kampą))
+        label.setAttribute("id", "track-" + (i+1) + "-label");             // prie kiekvieno label langelio elemento prideda html ID atributą (tikslas — tokiu būdu būtų galima customizint būtent 'Track 1' label langelį, kad būtų galima jo top-left kampą padaryti apvalų (apvalint TIK bendro visų labelų elemento top-left kampą nepavyksta, nes tuo atveju tą apvalintą kampą tiesiog užstoja "Track 1" label langelis, jo nesimato; dėl to reikia apvalint IR bendro visų labelų elemento top-left kampą, IR "Track 1" label langelio top-left kampą))
         label.textContent = 'Track ' + (i + 1);
         label.style.flex = '1';
-                                      
+                                             
         // (P)ianoroll ir (V)olume mygtukų konteineris
         const parametersVolumeButtonsContainer = document.createElement('div');
         parametersVolumeButtonsContainer.style.display = "flex";
-                                        
+                                                 
         // Pianoroll mygtukas
         const parametersButton = document.createElement('button');
         parametersButton.className = "parametersVolumeButtons";
@@ -108,16 +111,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         parametersButton.addEventListener('click', e => {
             const trackId = track.dataset.trackId;
             openPianorollForTrack(trackId);
-        });                                   
+        });                         
         // Volume mygtukas (dar nieko nedarantis)
         const volumeButton = document.createElement('button');
         volumeButton.className = "parametersVolumeButtons";
         volumeButton.textContent = "V";
-                                        
+                                                 
         // (P)ianoroll ir (V)olume mygtukai pridedami į jiem skirtą parent konteinerį
         parametersVolumeButtonsContainer.appendChild(parametersButton);
         parametersVolumeButtonsContainer.appendChild(volumeButton);
-          
+            
         // ===== Instrumento pasirinkimo dropdown sąrašas =====
 
         // Pats sąrašas (html select tipo elementas)
@@ -149,11 +152,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         labelBox.appendChild(parametersVolumeButtonsContainer);
         labelBox.appendChild(selectInstrument);
         labelsDiv.appendChild(labelBox);
-                                        
+                                                 
     }
 
 
-    // ========== TAKTO LINIJŲ SUKŪRIMAS ==========
+    // ========== TAKTO LINIJŲ SUKŪRIMO ==========
 
     const barLineGapLengthPx = 40;
 
@@ -183,7 +186,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     placeBlocksInSequencer(mainBlockData);      // [[name, start, duration], [.., .., ..], ...]
 
 
-    // ========== ESAMŲ BLOKŲ VIZUALUS SUDĖLIOJIMAS SEQUENCERY ==========    
+    // ========== ESAMŲ BLOKŲ VIZUALUS SUDĖLIOJIMAS SEQUENCERY ==========   
 
     function placeBlocksInSequencer(mainBlockData) {
 
@@ -228,37 +231,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
 
-    // ========== NATŲ-BLOKŲ STUMDYMO PELE FUNKCIJA ==========
+// ========== NATŲ-BLOKŲ STUMDYMO PELE FUNKCIJA (LOCKED IN PLACE) ==========
 
     function makeDraggable(block) {
+        // FULL LOCK: Blocks are completely undraggable
+        return; // This immediately exits the function, preventing any drag event listeners from being added
+        
+        // The rest of the dragging code is now disabled and won't execute
         let offsetX;
-        block.addEventListener('mousedown', (e) => {
+        let finalNewLeft = null; // Store the final position in pixels
 
+        block.addEventListener('mousedown', (e) => {
+            // This entire block is now unreachable due to the return statement above
             if (e.target.className !== 'blockHandle') return;
+
             offsetX = e.clientX - block.getBoundingClientRect().left;
 
             function mouseMoveHandler(e) {
-
                 const rect = sequencer.getBoundingClientRect();
                 let newLeft = e.clientX - rect.left - offsetX;
                 newLeft = Math.max(0, Math.min(newLeft, timelineWidthPx - block.offsetWidth));
                 newLeft = Math.round(newLeft / gridSize) * gridSize;
                 block.style.left = newLeft + 'px';
 
-                // === STUMDYTŲ NATŲ BLOKŲ DUOMENŲ PAKEITIMAS (mainBlockData arrayuje) ===
-
-                const indexOfDraggedBlock = mainBlockData.findIndex(singleBlock => singleBlock[0] === block.id)   // mainBlockData = [[name, start, duration], [...], ...]
-                if (indexOfDraggedBlock !== -1) mainBlockData[indexOfDraggedBlock][1] = newLeft * 10;
+                const indexOfDraggedBlock = mainBlockData.findIndex(singleBlock => singleBlock[0] === block.id);
+                if (indexOfDraggedBlock !== -1) {
+                    mainBlockData[indexOfDraggedBlock][1] = newLeft * 10;
+                    finalNewLeft = newLeft; 
+                }
             }
 
             function mouseUpHandler() {
                 document.removeEventListener('mousemove', mouseMoveHandler);
                 document.removeEventListener('mouseup', mouseUpHandler);
+
+                if (finalNewLeft !== null) {
+                    // A. Persist the updated data to the backend
+                    saveMainComposition();
+
+                    // B. Invalidate the audio object
+                    if (mainAudio && mainAudio.src) {
+                        URL.revokeObjectURL(mainAudio.src);
+                    }
+                    mainAudio = null;
+                    console.log(`Block ${block.id} moved and composition saved. Main audio invalidated. New start time: ${finalNewLeft * 10}ms`);
+                }
             }
 
             document.addEventListener('mousemove', mouseMoveHandler);
             document.addEventListener('mouseup', mouseUpHandler);
-
         });
     }
 
@@ -281,14 +302,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Išsaugo sequencerio kompoziciją
         saveMainComposition();
         
-        fetch(`/api/get-pianoroll-url?track=${trackId}&instrument=${trackId}`)      // čia taip teko daryti (dvigubai trackId iš pradžių dėt), nes kitų paramų nenorėjo užfiksuot, dėl to darom taip ir tada pakeičiam kitą tą paramą į mum reikiamą (pvz., instrumentą)
-            .then(res => res.json())
-            .then(data => {
-                const finalUrl = new URL (data.url, window.location.origin);
-                finalUrl.searchParams.set("instrument", chosenInstrument);
-                window.open(finalUrl.href, "_self");
-            })
-            .catch(err => console.error("Failed to open pianoroll:", err));
+        const finalUrl = new URL(`/pianoroll`, window.location.origin);
+        // Set the required parameters directly on the URL object
+        finalUrl.searchParams.set("track", trackId);
+        finalUrl.searchParams.set("instrument", chosenInstrument);
+
+        // Navigate to the constructed URL
+        window.open(finalUrl.href, "_self");
         
     }
 
@@ -296,25 +316,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ========== PASIRINKTO ESAMO NATŲ BLOKO PIANOROLLO ATIDARYMAS (redagavimui ar pan.) ==========
 
     function openPianorollOfExistingBlock(blockId) {
+        // Saves the sequencer composition state before navigating
+        saveMainComposition(); 
 
-        saveMainComposition();
-
+        // 1. Parse the blockId to extract parameters.
+        // Assuming blockId format is "trackId_blockInstrument_creationDate"
         let blockNameParameters = blockId.split("_");
 
-        const trackId = blockNameParameters[0];
-        const blockInstrument = blockNameParameters[1]
-        // const blockName = blockNameParameters[2] + "_" + blockNameParameters[3];    // blockName — iš esmės bloko sukūrimo data
+        // The first element is the track ID
+        const trackId = blockNameParameters[0]; 
+        // The second element is the instrument name
+        const blockInstrument = blockNameParameters[1]; 
 
-        fetch(`/api/get-pianoroll-url?track=${trackId}&instrument=${trackId}&block=${trackId}`)
-            .then (res => res.json())
-            .then (data => {
-                const finalUrl = new URL (data.url, window.location.origin);
-                finalUrl.searchParams.set("instrument", blockInstrument);
-                finalUrl.searchParams.set("block", blockId);
-                window.open(finalUrl.href, "_self");
-            })
-            .catch(err => console.error("Failed to open pianoroll of block:", err));
+        // 2. Construct the final URL directly, bypassing the API call.
+        const finalUrl = new URL(`/pianoroll`, window.location.origin);
+        
+        // Set the required parameters directly on the URL object
+        finalUrl.searchParams.set("track", trackId);
+        finalUrl.searchParams.set("instrument", blockInstrument);
+        finalUrl.searchParams.set("block", blockId); // Pass the original full blockId for reference
 
+        // 3. Navigate to the constructed URL
+        window.open(finalUrl.href, "_self");
     }
 
     
@@ -350,10 +373,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function getMainComposition() {
 
-        const response = await fetch("http://localhost:6767/get_main")
-        const data  = await response.json();
-        mainBlockData = data;
-        console.log(mainBlockData); // [[name, start, duration], [.., .., ..], ...]
+        try {
+            const response = await fetch("http://localhost:6767/get_main");
+            const data  = await response.json();
+            mainBlockData = data;
+            console.log(mainBlockData); // [[name, start, duration], [.., .., ..], ...]
+        } catch (error) {
+            console.error("Failed to fetch main composition:", error);
+            // Initialize with empty data on failure
+            mainBlockData = []; 
+        }
 
     }
 
@@ -362,25 +391,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function getInstrumentsAndAddToList() {
 
-        // Instrumentų gavimas
+        try {
+            // Instrumentų gavimas
+            const response = await fetch("http://localhost:6767/get_instruments")
+            const data = await response.json();
+            const instrumentsData = data;       // {instrumentas1 : ['C1', 'Cs1', ...], instrumentas2 : [...], ...}
+            console.log(instrumentsData);
 
-        const response = await fetch("http://localhost:6767/get_instruments")
-        const data = await response.json();
-        const instrumentsData = data;       // {instrumentas1 : ['C1', 'Cs1', ...], instrumentas2 : [...], ...}
-        console.log(instrumentsData);
+            // Instrumentų integravimas sequencer puslapio frontende
 
-        // Instrumentų integravimas sequencer puslapio frontende
+            const instrumentArray = Object.keys(instrumentsData);
+            console.log(instrumentArray);
 
-        const instrumentArray = Object.keys(instrumentsData);
-        console.log(instrumentArray);
+            instrumentArray.forEach(instrument => {
 
-        instrumentArray.forEach(instrument => {
+                // Paruošim instrumentų vardus (text: ...), kad prasidėtų didžiosiomis raidėmis ir pan.
+                let capitalizedInstrumentName = prepareInstrumentNameForDisplay(instrument);    // padarys visus instrumento pavadinimo žodžius iš didžiosios raidės
 
-            // Paruošim instrumentų vardus (text: ...), kad prasidėtų didžiosiomis raidėmis ir pan.
-            let capitalizedInstrumentName = prepareInstrumentNameForDisplay(instrument);   // padarys visus instrumento pavadinimo žodžius iš didžiosios raidės
-
-            instrumentList.push({value: instrument, text: capitalizedInstrumentName});
-        })
+                instrumentList.push({value: instrument, text: capitalizedInstrumentName});
+            })
+        } catch (error) {
+            console.error("Failed to fetch instruments:", error);
+        }
     }
 
     // ===== Instrumento vardų (rodysimų instrumentų dropdown meniuje) paruošimas (kad būtų iš didž. raidės) =====
@@ -404,9 +436,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function getTrackInstruments() {
 
-        await fetch("http://localhost:6767/get_track_instruments")
-                    .then (response => response.json())
-                    .then (data => trackInstruments = data)
+        try {
+            const response = await fetch("http://localhost:6767/get_track_instruments")
+            const data = await response.json();
+            trackInstruments = data;
+        } catch (error) {
+            console.error("Failed to fetch track instruments:", error);
+            trackInstruments = {}; // Initialize with empty object on failure
+        }
 
     }
 
@@ -420,9 +457,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function getAudioForPlay() {
 
-        if (mainAudio || isAudioLoading) return Promise.resolve();                  // Promise — žymi async funkcijos užbaigimą
+        // CHANGE: Only load if mainAudio is NULL and we are not already loading
+        if (mainAudio || isAudioLoading) return Promise.resolve();       // Promise — žymi async funkcijos užbaigimą
 
         isAudioLoading = true;
+
+        // NOTE: The cleanup for mainAudio (URL.revokeObjectURL) is now done 
+        // in makeDraggable or when a new audio is successfully loaded.
 
         return fetch("http://localhost:6767/play_main", {
             method: 'POST'
@@ -430,21 +471,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         .then(async response => {
             if (!response.ok) throw new Error ("Main audio retrieval error " + response.status);
 
-            const audioBlob = await response.blob();                                // perskaityt WAV duomenis kaip blob
+            const audioBlob = await response.blob();                         // perskaityt WAV duomenis kaip blob
 
-            if (mainAudio && mainAudio.src) URL.revokeObjectURL(mainAudio.src);     // pašalint senesnio įrašo URLą, jeigu jau yra naujas įrašas
+            // Cleanup old audio object if it exists before creating a new one
+            if (mainAudio && mainAudio.src) URL.revokeObjectURL(mainAudio.src); 
 
-            const audioUrl = URL.createObjectURL(audioBlob);                        // WAV įrašą paverst laikinan audio objekto URL'an
-            mainAudio = new Audio(audioUrl);                                        // sukuriamas audio objektas
+            const audioUrl = URL.createObjectURL(audioBlob);                 // WAV įrašą paverst laikinan audio objekto URL'an
+            mainAudio = new Audio(audioUrl);                                 // sukuriamas audio objektas
             
             isAudioLoading = false;
 
             console.log("Audio loaded and ready for playback.");
-
-            /*const downloadButton = document.getElementById("exportButton");
-            if (downloadButton) {
-                downloadButton.addEventListener('click', downloadMainAudio);
-            }*/
 
         })
         .catch(error => {
@@ -462,10 +499,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let playhead = document.getElementById("playhead");
     let isPlaying = false;
-    let startTimestamp = null;                              // laiko momentas, kai buvo pradėtas grojimas
-    let pauseOffset = 0;                                    // how far into the track we've played (ms)
-    let pixelsPerMs = 0.1;                                  // Playback linijos judėjimo greitis (px/ms)
-    const totalDuration = timelineWidthPx / pixelsPerMs;    // Pilnas playback grojimo ilgis (priklauso nuo pianoroll ilgio ir judėjimo greičio). KOL KAS kintamasis yra CONST, bet jeigu padarytumėm automatinį pianorollo prasiplėtimą (kai natos artėja prie galo), tada bus LET.
+    let startTimestamp = null;                               // laiko momentas, kai buvo pradėtas grojimas
+    let pauseOffset = 0;                                     // how far into the track we've played (ms)
+    let pixelsPerMs = 0.1;                                   // Playback linijos judėjimo greitis (px/ms)
+    const totalDuration = timelineWidthPx / pixelsPerMs;     // Pilnas playback grojimo ilgis (priklauso nuo pianoroll ilgio ir judėjimo greičio). KOL KAS kintamasis yra CONST, bet jeigu padarytumėm automatinį pianorollo prasiplėtimą (kai natos artėja prie galo), tada bus LET.
 
 
     // ========== LINIJOS JUDĖJIMO FUNKCIJA ==========
@@ -526,7 +563,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (!isPlaying || !mainAudio) return;
 
-        mainAudio.pause();      // sustabdo įrašą, nenumušant esamo grojimo laiko
+        mainAudio.pause();       // sustabdo įrašą, nenumušant esamo grojimo laiko
         
         // Linijai:
 
@@ -547,7 +584,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!mainAudio) return;
 
         mainAudio.pause();
-        mainAudio.currentTime = 0;      // perstato grojimo laiką į 0
+        mainAudio.currentTime = 0;       // perstato grojimo laiką į 0
         
         // Linijai:
 
@@ -629,6 +666,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     const downloadButton = document.getElementById("exportButton");
     downloadButton.addEventListener('click', downloadMainAudio);
     
-
 
 });

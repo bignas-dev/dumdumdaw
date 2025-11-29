@@ -2,10 +2,8 @@ import shutil
 from collections import defaultdict
 import tempfile
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import HTTPException
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
 from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError
 from starlette.background import BackgroundTask
@@ -15,49 +13,31 @@ SAMPLE_RATE = 44100
 SAMPLES_DIR = Path(__file__).parent / "samples"
 MAX_DURATION = 1_000_000
 
-app = FastAPI(title="DAW Audio Renderer")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-class NoteRequest(BaseModel):
-    instrument: str
-    note: str
-
-
-class SaveBlockRequest(BaseModel):
-    name: str
-    sequence: list[tuple[str, str, float, float]]
-
-
-class SaveMainRequest(BaseModel):
-    sequence: list[tuple[str, float, float]]
-
-
-class AddToMainRequest(BaseModel):
-    block: tuple[str, float, float]
-
-
-class AddTrackInstrument(BaseModel):
-    track_nr: int
-    instrument: str
+blocks = {}
+main = {}
+track_instruments = {}
 
 
 def generate_music(
     sequence: list[tuple[str, str, float, float]],
 ):
     if not sequence:
-        raise HTTPException(status_code=400, detail="Empty sequence")
+        temp_dir = Path(tempfile.mkdtemp())
+        output_path = temp_dir / "silence.wav"
+        AudioSegment.silent(duration=50, frame_rate=SAMPLE_RATE).export(
+            output_path, format="wav"
+        )
+
+        return FileResponse(
+            path=output_path,
+            media_type="audio/wav",
+            filename="silence.wav",
+            background=BackgroundTask(shutil.rmtree, temp_dir),
+        )
 
     max_end = 0
     validated_sequence = []
-    for inst, note, start, end in sequence:
+    for (inst, note, start, end) in sequence:
         if start < 0 or end <= 0 or end <= start:
             raise HTTPException(
                 status_code=400, detail=f"Invalid timing: start={start}, end={end}"
@@ -111,12 +91,6 @@ def generate_music(
     )
 
 
-blocks = {}
-main = []
-track_instruments = {}
-
-
-@app.get("/get_instruments")
 def get_instruments():
     instrument_data = defaultdict(list)
 
@@ -139,94 +113,75 @@ def get_instruments():
     return instrument_data
 
 
-@app.post("/get_note", response_class=FileResponse)
-def get_note(request: NoteRequest):
+def get_note(request):
     return generate_music([(request.instrument, request.note, 0, 500)])
 
 
-@app.post("/add_track_instrument")
-def add_track_instrument(request: AddTrackInstrument):
+def add_track_instrument(request):
     track_instruments[request.track_nr] = request.instrument
     return {"status": "added"}
 
 
-@app.get("/get_track_instruments")
 def get_track_instruments():
     return track_instruments
 
 
-@app.post("/save_block")
-def save_block(request: SaveBlockRequest):
+def save_block(request):
     blocks[request.name] = request.sequence
     return {"status": "saved"}
 
 
-@app.post("/add_block_to_main")
-def add_block_to_main(request: AddToMainRequest):
-    main.append(request.block)
-    return {"status": "added"}
+def save_block_to_main(request):
+    main[request.name] = [request.start, request.end]
+    return {"status": "saved"}
 
 
-@app.post("/save_block_changes_to_main")
-def save_block_changes_to_main(request: AddToMainRequest):
-    for i, blockTuple in enumerate(main):
-        if blockTuple[0] == request.block[0]:
-            main[i] = request.block
-            break
-    return {"status": "edited", "main": main}
-
-
-@app.get("/get_block")
-def get_block(name: str):
+def get_block(name):
     if name not in blocks:
         raise HTTPException(status_code=404, detail=f"Block '{name}' not found")
     return blocks[name]
 
 
-@app.post("/play_block", response_class=FileResponse)
-def play_block(name: str):
-    if name not in blocks:
-        raise HTTPException(status_code=404, detail=f"Block '{name}' not found")
-    return generate_music(blocks[name])
+def play_block(request):
+    return generate_music(request.sequence)
 
 
-@app.post("/save_main")
-def save_main(request: SaveMainRequest):
-    global main
-    main = request.sequence
-    return {"status": "main saved"}
-
-
-@app.get("/get_main")
 def get_main():
-    return main
+    return [[key, *values] for key, values in main.items()]
 
 
-@app.post("/play_main", response_class=FileResponse)
 def play_main():
-    for block_ref in main:
-        block_name = block_ref[0]
+    temp_seq = []
+
+    for block_name, block in main.items():
         if block_name not in blocks:
             raise HTTPException(
                 status_code=404,
                 detail=f"Block '{block_name}' not found in main sequence",
             )
+        else:
+            for insides in blocks[block_name]:
+                local_start = insides[2]
+                local_end = insides[3]
+                global_start = block[0]
+                global_end = block[1]
 
-    temp_seq = []
-    for block in main:
-        for insides in blocks[block[0]]:
-            local_start = insides[2]
-            local_end = insides[3]
-            global_start = block[1]
-            global_end = block[2]
-            new_start = local_start + global_start
-            new_end = min(local_end + global_start, global_end)
-            temp_seq.append((insides[0], insides[1], new_start, new_end))
+                new_start = local_start + global_start
+                new_end = min(local_end + global_start, global_end)
+                temp_seq.append((insides[0], insides[1], new_start, new_end))
 
     return generate_music(temp_seq)
 
 
-if __name__ == "__main__":
-    import uvicorn
+def delete_block(request):
+    if request.name in blocks:
+        del blocks[request.name]
+        return {"status": f"Block '{request.name}' deleted from storage"}
+    return {"status": f"Block '{request.name}' not found in storage"}
 
-    uvicorn.run(app, host="127.0.0.1", port=6767)
+
+def delete_block_from_main(request):
+    if request.name in main:
+        del main[request.name]
+        return {"status": f"Block '{request.name}' deleted from main sequence"}
+    return {"status": f"Block '{request.name}' not found in main sequence"}

@@ -64,9 +64,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Pianoroll html elementų aukščiai
     pianoroll.style.height = (pitchRowCount * pitchRowHeight) + 'px';                       // NUSTATOMAS VISO PIANOROLL ELEMENTO AUKŠTIS (priklauso nuo trackų skaičiaus)
     pianorollContainer.style.height = (pitchRowCount * pitchRowHeight) + 15 + "px";         // BE ŠITO APIBRĖŽIMO, BENDRAI PIANOROLL EILIŲ MATOSI TIK TIEK AUKŠČIO, KIEK YRA JO NUSTATYTA VISO PIANOROLL MATOMAM SCROLL LANGE (pvz., 550px), O NE VISAS (pvz., 1920px=96*20) 
-    pitchLabelsBox.style.height = (pitchRowCount * pitchRowHeight) + 15 + "px";             // BE ŠITO APIBRĖŽIMO, LABELSDIV ELEMENTO AUKŠTIS KAŽKODĖL PATS SUMAŽĖJA (KIEKVIENAS LABEL BOX UŽIMA 95,8PX, O NE 100PX), TAMPA NELYGUS TRACK EILUČIŲ AUKŠČIUI. Čia aiškiai apibrėžiam, kad pitchLabelsBox (html id="labels") aukštis yra 1000px (100*10)          
+    pitchLabelsBox.style.height = (pitchRowCount * pitchRowHeight) + 15 + "px";             // BE ŠITO APIBRĖŽIMO, LABELSDIV ELEMENTO AUKŠTIS KAŽKOKĖL PATS SUMAŽĖJA (KIEKVIENAS LABEL BOX UŽIMA 95,8PX, O NE 100PX), TAMPA NELYGUS TRACK EILUČIŲ AUKŠČIUI. Čia aiškiai apibrėžiam, kad pitchLabelsBox (html id="labels") aukštis yra 1000px (100*10)          
 
-    let idsOfAllRows = [];
+    const idsOfAllRows = [];
 
     // ========== NATŲ EILIŲ (pitch row) SUKŪRIMO DALIS (didelis for loopas) ==========
 
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 break;
         }
         pianorollNotes[i] = [];
-        noteNamesofRowsDict[i] = [pitchRowLabel.textContent.replace("#", "s")];       // susirenkam eilių ID ir jų notacijos pavadinimų objectą. # pakeičiam į s (nes taip backendas skaito) {BACKEND}
+        noteNamesofRowsDict[i] = pitchRowLabel.textContent.replace("#", "s");       // susirenkam eilių ID ir jų notacijos pavadinimų objectą. # pakeičiam į s (nes taip backendas skaito) {BACKEND}
         rowsOfNoteNamesDict[pitchRowLabel.textContent.replace("#", "s")] = i;         // tas pats kas ankstesnis, tik kad atvirkščiai. Irgi reikia konvertavimam.
         
         pitchLabelsBox.appendChild(pitchRowLabel); 
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     }
     
-    let idsOfRowsOfExistingNotes = [];
+    const idsOfRowsOfExistingNotes = [];
     getIdsOfRowsOfExistingNotes();
 
     changePropertiesOfRowsOfNonexistentNotes();
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function getIdsOfRowsOfExistingNotes() {
 
         idsOfAllRows.forEach(rowId => {
-            if (existingInstrumentNotes.includes(String(noteNamesofRowsDict[rowId]))) idsOfRowsOfExistingNotes.push(rowId);
+            if (existingInstrumentNotes.includes(noteNamesofRowsDict[rowId])) idsOfRowsOfExistingNotes.push(rowId);
         })
         console.log(idsOfRowsOfExistingNotes);
     }
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log(blockId);
 
         // jeigu yra blockDate (jeigu tai jau esamo bloko pianorollas), tai įterpt bloko vardą (blockDate). Jeigu nėra — parašo "New Note Block" (nes tada skaitos naujas yra)
-        if (blockDate) document.getElementById("blockName").innerHTML = "<b>Block Name:&nbsp</b>" + blockDate;
+        if (blockDate) document.getElementById("blockName").innerHTML = blockDate;
 
         getExistingBlockData();
 
@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     for (let i = 1; i < Math.floor(timelineWidthPx/barLineGapLengthPx); i++) {
 
-        let barLine = document.createElement("div");
+        const barLine = document.createElement("div");
         barLine.className = "barLine";
         barLine.style.left = (i*barLineGapLengthPx) + "px";
         
@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // SENIAU BUVO TOKS: pianorollNotes[rowId].push({id: note.id, start: left, duration: width});
 
         // Į PIANOROLL NATŲ OBJECTĄ (sąrašą) PRIDEDA NAUJOS NATOS DUOMENIS: ID, INSTRUMENTAS, NATA, PRADŽIOS POZICIJA, PABAIGOS POZICIJA {BACKEND} !!!!!!!!
-        pianorollNotes[rowId].push({id: ID, instrument: instrument, note: String(noteNamesofRowsDict[rowId]), start_time_ms: left*10, end_time_ms: (left+width)*10}); // !!! imam, kad 100px = 1000ms = 1s, dėl to *10
+        pianorollNotes[rowId].push({id: ID, instrument: instrument, note: noteNamesofRowsDict[rowId], start_time_ms: left*10, end_time_ms: (left+width)*10}); // !!! imam, kad 100px = 1000ms = 1s, dėl to *10
 
         // console.log(pianorollNotes);
 
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         noteCounter++;
 
         // === DĖL SUKURTOS NATOS PAGROJIMO {BACKEND} ===
-        singleNoteRegister = {"instrument" : instrument, "note": String(noteNamesofRowsDict[rowId])};
+        singleNoteRegister = {"instrument" : instrument, "note": noteNamesofRowsDict[rowId]};
         sendSingleNote();
         
     }
@@ -356,32 +356,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function makeDraggable(note, rowId) {
         let offsetX;
+        let finalNewLeft = null;
+
         note.addEventListener('mousedown', (e) => {
             if (e.target.className === 'note-handle') return;
             offsetX = e.clientX - note.getBoundingClientRect().left;
-            function mouseMoveHandler(e) {
 
+            function mouseMoveHandler(e) {
                 const rect = pianoroll.getBoundingClientRect();
                 let newLeft = e.clientX - rect.left - offsetX;
                 newLeft = Math.max(0, Math.min(newLeft, timelineWidthPx - note.offsetWidth));
                 newLeft = Math.round(newLeft / gridSize) * gridSize;
                 note.style.left = newLeft + 'px';
-
-                // Pianoroll sąraše suranda pastumdytos natos ID {BACKEND}
-                const n = pianorollNotes[rowId].find(n => String(n.id) === String(note.id));
-                // Pakeičia pastumdytos natos start duomenis {BACKEND}
-                if (n) {
-                    n.end_time_ms += newLeft*10 - n.start_time_ms;
-                    n.start_time_ms = newLeft * 10;
-                }
-                else console.log("Dragging: ID mismatch");
-
+                finalNewLeft = newLeft;
+                // Note data update moved to mouseUpHandler for transactional integrity
             }
             
             function mouseUpHandler() {
                 document.removeEventListener('mousemove', mouseMoveHandler);
                 document.removeEventListener('mouseup', mouseUpHandler);
+
+                // Commit note data changes here
+                if (finalNewLeft !== null) {
+                    const n = pianorollNotes[rowId].find(n => String(n.id) === String(note.id));
+                    if (n) {
+                        const duration = n.end_time_ms - n.start_time_ms;
+                        n.start_time_ms = finalNewLeft * 10;
+                        n.end_time_ms = n.start_time_ms + duration;
+                    }
+                    else console.log("Dragging: ID mismatch on mouseUp");
+                }
             }
+
             document.addEventListener('mousemove', mouseMoveHandler);
             document.addEventListener('mouseup', mouseUpHandler);
         });
@@ -392,6 +398,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     function makeResizable(note, handle, rowId) {
 
         let startX, startWidth;
+        let finalNewWidth = null;
+
         handle.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             startX = e.clientX;
@@ -403,22 +411,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 let newWidth = Math.max(10, startWidth + delta);
                 newWidth = Math.round(newWidth / gridSize) * gridSize;
                 note.style.width = newWidth + 'px';
-
-                // Pianoroll sąraše suranda patampytos natos ID {BACKEND}
-                const n = pianorollNotes[rowId].find(n => String(n.id) === String(note.id));
-                // Pakeičia patampytos natos duration duomenis {BACKEND}
-                if (n) {
-                    let oldWidth = (n.end_time_ms - n.start_time_ms) / 10;
-                    n.end_time_ms += (newWidth - oldWidth) * 10;
-                }
-                else console.log("Resizing: ID mismatch");
+                finalNewWidth = newWidth;
+                // Note data update moved to mouseUpHandler for transactional integrity
 
             }
             
             function mouseUpHandler() {
                 document.removeEventListener('mousemove', mouseMoveHandler);
                 document.removeEventListener('mouseup', mouseUpHandler);
+
+                // Commit note data changes here
+                if (finalNewWidth !== null) {
+                    const n = pianorollNotes[rowId].find(n => String(n.id) === String(note.id));
+                    if (n) {
+                        let oldWidth = (n.end_time_ms - n.start_time_ms) / 10;
+                        n.end_time_ms += (finalNewWidth - oldWidth) * 10;
+                    }
+                    else console.log("Resizing: ID mismatch on mouseUp");
+                }
             }
+
             document.addEventListener('mousemove', mouseMoveHandler);
             document.addEventListener('mouseup', mouseUpHandler);
         });
@@ -432,7 +444,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function playAudio(url) {
 
-        const audio = document.getElementById("audio-player");
+        const audio = document.getElementById("audio-player"); // If this is for single note playback, it's fine.
 
         if (!audio) {
             console.error("No <audio> element with id='audio-player'");
@@ -496,7 +508,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         pianorollNoteData.forEach(function(singleNoteData) {
 
-            ID = generateNoteId();
+            const ID = generateNoteId();
 
             const noteDataToBeAdded = {
                 id: ID, 
@@ -506,11 +518,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 end_time_ms: singleNoteData[3]
             }
             
-            pianorollNotes[rowsOfNoteNamesDict[singleNoteData[1]]].push(noteDataToBeAdded);
-
-            placeNotesToPianoroll(noteDataToBeAdded);
-            
-            noteCounter++;  // gi prisideda natų! tai reik ir counterį padidint
+            // Check if note exists in rowsOfNoteNamesDict before trying to place it
+            const rowId = rowsOfNoteNamesDict[singleNoteData[1]];
+            if (rowId !== undefined) {
+                pianorollNotes[rowId].push(noteDataToBeAdded);
+                placeNotesToPianoroll(noteDataToBeAdded);
+                noteCounter++;  // gi prisideda natų! tai reik ir counterį padidint
+            } else {
+                console.warn(`Note ${singleNoteData[1]} not found in pianoroll rows. Skipping.`);
+            }
 
         });
 
@@ -521,6 +537,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const note = document.createElement("div");
         note.className = 'note';
         note.id = singleNoteData.id;
+        // The block data is normalized (starts at 0), so we use the absolute start/end times for placement
         note.style.left = (singleNoteData.start_time_ms / 10) + "px";
         note.style.width = ((singleNoteData.end_time_ms - singleNoteData.start_time_ms) / 10) + "px";
         const rowId = rowsOfNoteNamesDict[singleNoteData.note];
@@ -546,6 +563,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 
+    /**
+     * Collects all current note data, normalizes the sequence to start at 0ms,
+     * and calculates the total duration and the original start offset.
+     * @returns {{sequence: Array<[string, string, number, number]>, duration_ms: number, start_offset_ms: number} | null}
+     */
+    function normalizeAndPrepareBlockData() {
+        let pianorollData = [];
+        let noteStarts = [];
+        let noteEnds = [];
+
+        // 1. Collect data and start/end times
+        for (let i = 0; i < pitchRowCount; i++) {
+            let singleRowData = pianorollNotes[i];
+            singleRowData.forEach(element => {
+                // Collect the raw data
+                pianorollData.push([element.instrument, element.note, element.start_time_ms, element.end_time_ms]);
+                noteStarts.push(element.start_time_ms);
+                noteEnds.push(element.end_time_ms);
+            });
+        }
+        
+        // Handle empty block case
+        if (pianorollData.length === 0) return null;
+
+        // 2. Determine the earliest note start time (the offset)
+        const blockStartOffsetMs = Math.min(...noteStarts);
+        
+        // 3. Normalize: shift all notes back by the offset
+        let normalizedData = pianorollData.map(note => {
+            const [instrument, noteName, startMs, endMs] = note;
+            const newStartMs = startMs - blockStartOffsetMs;
+            const newEndMs = endMs - blockStartOffsetMs;
+            return [instrument, noteName, newStartMs, newEndMs];
+        });
+
+        // 4. Calculate the new total duration of the normalized block
+        const newMaxEndMs = Math.max(...normalizedData.map(note => note[3]));
+
+        return {
+            sequence: normalizedData,
+            duration_ms: newMaxEndMs,
+            // Return the original start offset (this is where the block should start on the sequencer)
+            start_offset_ms: blockStartOffsetMs
+        };
+    }
+
 
     // ========== JAU SENIAU SUKURTO NATŲ BLOKO (ir paredaguoto ar ne) IŠSAUGOJIMO BACKENDE FUNKCIJA ==========
 
@@ -563,37 +626,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 
+    // IMPROVEMENT: New function to handle block deletion (for empty blocks)
+    function deleteBlock() {
+        const noteBlockName = params.get("block");
+        if (!noteBlockName) return; // Only for existing blocks
+
+        // 1. Delete from blocks (storage)
+        fetch("http://localhost:6767/delete_block", {
+            method: "POST",
+            headers: {'Content-Type' : 'application/json'},
+            body: JSON.stringify({name: noteBlockName})
+        })
+        .then(response => response.json())
+        .then(data => console.log("Deleted from blocks OK:", data))
+        .catch(err => console.warn("Backend block delete failed:", err));
+
+        // 2. Delete from main (sequencer track)
+        fetch("http://localhost:6767/delete_block_from_main", {
+            method: "POST",
+            headers: {'Content-Type' : 'application/json'},
+            body: JSON.stringify({name: noteBlockName})
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Deleted from main OK:", data);
+            window.location.replace("/sequencer");
+        })
+        .catch(err => console.warn("Backend main block delete failed:", err));
+    }
+
+
     // ========== NENAUJO (REDAGUOJAMO) NATŲ BLOKO IŠSAUGOJIMAS ==========
 
     function saveEditedNoteBlockData() {
 
-        // if (noteCounter === 0) /*ištrint bloką ir grįžt sequencerin?*/
+        // Use the common normalization logic
+        const preparedData = normalizeAndPrepareBlockData();
 
-        // čia bus surenkami patys pianoroll natų duomenys
-        let pianorollData = [];
-
-        // kiekvienos atskiros pianoroll eilutės natų objectai pridedami atskirai į pianorollData array (ale deconstructinam pianorollNotes, kuriame talpinti natų duomenys (nors dar su ID, kurio reik pianorollui, bet backendui ne))
-        for (let i = 0; i < pitchRowCount; i++) {
-
-            // paimam pianorollo i-tosios eilutės visų natų duomenis
-            let singleRowData = pianorollNotes[i];
-            
-            // pridėsim kiekvieną atskirą singleRowData elementą (atskirų natų duomenys) į pianorollData arrayų — bendran katilan
-            singleRowData.forEach(element => {
-
-                // pridedam atskirų natų duomenis į pianorollData (bendras visų pianoroll natų katilas), išskyrus id, nes backendui jis nereikalingas
-                pianorollData.push([element.instrument, element.note, element.start_time_ms, element.end_time_ms])
-
-            });
+        if (!preparedData) {
+            // If block is empty, delete it
+            return deleteBlock();
         }
-        console.log(pianorollData);
 
         // gaunam esamo bloko pavadinimą
         const noteBlockName = params.get("block");
         console.log(noteBlockName);
 
-        // čia jau tas gatavas objectas, kurį siųsim backendui
-        const noteBlockData = {name: noteBlockName, sequence: pianorollData};
+        // čia jau tas gatavas objectas, kurį siųsim backendui (with normalized sequence)
+        const noteBlockData = {name: noteBlockName, sequence: preparedData.sequence};
         console.log(noteBlockData);
 
         // siuntimas backendui (ir status atsako gavimas iš jo) 
@@ -609,24 +689,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         .catch(err => console.warn("Backend sync failed:", err));
 
         // === SIUNTIMAS Į MAIN ===
-        saveEditedNoteBlock(noteBlockData)
+        // Pass normalized duration
+        saveEditedNoteBlock(noteBlockData, preparedData.duration_ms);
 
     }
 
     // ========== JAU *ANKSČIAU SUKURTO* (REDAGUOJAMO) BLOKO IŠSAUGOJIMAS ==========
 
-    function saveEditedNoteBlock(noteBlockData) {
+    function saveEditedNoteBlock(noteBlockData, duration_ms) {
 
         const urlParams = new URLSearchParams(window.location.search);
         const originalBlockId = urlParams.get("block");
 
-        let mainBlockData = prepareNoteBlockDataForMain(noteBlockData);
-        console.log(mainBlockData);
-
-        const preparedBlockDataForMain = {block: [originalBlockId, currentBlockStartPosInSequencer, mainBlockData.duration_ms]};
+        // The duration is passed and the start position is retrieved from the original context.
+        // currentBlockStartPosInSequencer is fetched by getMainCompositionData
+        const preparedBlockDataForMain = {
+            name: originalBlockId, 
+            start:  currentBlockStartPosInSequencer, 
+            end: duration_ms + currentBlockStartPosInSequencer // Correctly calculate new end time
+        };
+        
         console.log(preparedBlockDataForMain);
         
-        fetch("http://localhost:6767/save_block_changes_to_main", {
+        fetch("http://localhost:6767/save_block_to_main", {
             method: "POST",
             headers: {'Content-Type' : 'application/json'},
             body: JSON.stringify(preparedBlockDataForMain)
@@ -646,30 +731,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function saveNewNoteBlockData() {
 
+        // Use the common normalization logic
+        const preparedData = normalizeAndPrepareBlockData();
+
         // čia tam, kad jeigu pianorolle nesukurta natų, tai tada ir neišsaugotų pianorollo, nesiųstų backendui !!!!!
-        if (noteCounter === 0) {
-            // removeNoteBlockFromMain();
+        if (!preparedData) {
             return window.location.replace("/sequencer");
         }
-        // čia bus surenkami patys pianoroll natų duomenys
-        let pianorollData = [];
-
-        // kiekvienos atskiros pianoroll eilutės natų objectai pridedami atskirai į pianorollData array (ale deconstructinam pianorollNotes, kuriame talpinti natų duomenys (nors dar su ID, kurio reik pianorollui, bet backendui ne))
-        for (let i = 0; i < pitchRowCount; i++) {
-
-            // paimam pianorollo i-tosios eilutės visų natų duomenis
-            let singleRowData = pianorollNotes[i];
-            
-            // pridėsim kiekvieną atskirą singleRowData elementą (atskirų natų duomenys) į pianorollData arrayų — bendran katilan
-            singleRowData.forEach(element => {
-
-                // pridedam atskirų natų duomenis į pianorollData (bendras visų pianoroll natų katilas), išskyrus id (backendui jis nereikalingas)
-                pianorollData.push([element.instrument, element.note, element.start_time_ms, element.end_time_ms]);
-
-            });
-        }
-        console.log(pianorollData);
-
+        
         // dėl natų bloko pavadinimo (turi unikalūs būti, dėl to pagal datą; datą dar reik aptvarkyt, tai čia tą ir darom)
         const now = new Date();
         const nowFormatted1 = now.toISOString().replace(/[:.]/g, "-"); // pakeičiam : ir . į - (brūkšnius)
@@ -680,7 +749,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const noteBlockName = trackId + "_" + instrument + "_" + nowFullyFormated;
 
         // čia jau tas gatavas objectas, kurį siųsim backendui
-        const noteBlockData = {name: noteBlockName, sequence: pianorollData};
+        const noteBlockData = {name: noteBlockName, sequence: preparedData.sequence};
         console.log(noteBlockData);
 
         // siuntimas backendui (ir status atsako gavimas iš jo) 
@@ -702,21 +771,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // ===== SIUNTIMAS Į MAIN =====
 
-        saveNewNoteBlock(noteBlockData);
+        // Pass normalized duration and the block's absolute start offset
+        saveNewNoteBlock(noteBlockData, preparedData.duration_ms, preparedData.start_offset_ms);
     }
 
 
     // ========== NAUJO BLOKO IŠSAUGOJIMAS (Į MAIN!, mažiau detalūs duomenys) ==========
 
-    function saveNewNoteBlock(noteBlockData) {
+    function saveNewNoteBlock(noteBlockData, duration_ms, start_offset_ms) {
 
-        let mainBlockData = prepareNoteBlockDataForMain(noteBlockData);
-        console.log(mainBlockData);
-
-        const preparedBlockDataForMain = {block: [mainBlockData.block_name, 0, mainBlockData.duration_ms]};     // ne mainBlockData.start_time_ms, o 0, kadangi kitu atveju iškerpama natų bloko pradžia! O tai nėra gerai natų bloko vientisumui, po to kiltų bėdų su bloko grojimu
+        // The block is placed on the sequencer at the absolute time of its first note (start_offset_ms)
+        const preparedBlockDataForMain = {
+            name: noteBlockData.name, 
+            start: start_offset_ms, 
+            end: duration_ms + start_offset_ms // duration + start_offset
+        };
         console.log(preparedBlockDataForMain);
         
-        fetch("http://localhost:6767/add_block_to_main", {
+        fetch("http://localhost:6767/save_block_to_main", {
             method: 'POST',
             headers: {'Content-Type' : 'application/json'},
             body: JSON.stringify(preparedBlockDataForMain)
@@ -731,28 +803,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 
-    // ========== NATŲ BLOKO DUOMENŲ PARUOŠIMAS SAUGOJIMUI Į SAVE_MAIN ==========
-
+    // REMOVED: prepareNoteBlockDataForMain function is now replaced by normalizeAndPrepareBlockData
+    /*
     function prepareNoteBlockDataForMain(noteBlockData) {
-
-        const blockName = noteBlockData.name;
-        const blockData = noteBlockData.sequence;   // [[instr,note,start,end], [...], ...]
-
-        const noteStarts = blockData.map(parameter => parameter[2]);
-        const noteEnds = blockData.map(parameter => parameter[3]);
-
-        const blockStartMs = Math.min(...noteStarts);
-        const blockEndMs = Math.max(...noteEnds);
-
-        const blockDuration = blockEndMs; //  - blockStartMs;
-
-        return {
-            block_name: blockName,
-            start_time_ms: blockStartMs,
-            duration_ms: blockDuration
-        }
-
+        // ... (removed)
     }
+    */
 
 
     // ========== VISOS SEQUENCERIO KOMPOZICIJOS DUOMENŲ GAVIMAS ==========
@@ -761,16 +817,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     function getMainCompositionData() {
 
         const currentlyEditedBlockName = params.get("block");
-        /*
-        const response = fetch("http://localhost:6767/get_main")
-        const data  = response.json();                              // [[name, start, duration], [.., .., ..], ...]
-        */
-
+        
         fetch("http://localhost:6767/get_main")
             .then(response => response.json())
             .then(data => {
                 data.forEach(singleBlockData => {
-                    if (singleBlockData[0] == currentlyEditedBlockName) currentBlockStartPosInSequencer = singleBlockData[1];
+                    if (String(singleBlockData[0]) === String(currentlyEditedBlockName)) {
+                        currentBlockStartPosInSequencer = singleBlockData[1];
+                    }
                 })
             });
 
@@ -803,152 +857,84 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 
-
-
-    /*
-    // ============================== PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS (play, pause, stop) ==============================
-    // Playback mygtukai turėtų turėt dvi paskirtis: 1. vizualią (linijos judėjimo kaitymas);  2. grojimo (įrašo grojimas/nebegrojimas) {BACKEND}
-
-    let playhead = document.getElementById("playhead");
-    let isPlaying = false;
-    let startTimestamp = null;                              // laiko momentas, kai buvo pradėtas grojimas
-    let pauseOffset = 0;                                    // how far into the pitchRow we've played (ms)
-    let pixelsPerMs = 0.1;                                  // Playback linijos judėjimo greitis (px/ms)
-    const totalDuration = timelineWidthPx / pixelsPerMs;    // Pilnas playback grojimo ilgis (priklauso nuo pianoroll ilgio ir judėjimo greičio). KOL KAS kintamasis yra CONST, bet jeigu padarytumėm automatinį pianorollo prasiplėtimą (kai natos artėja prie galo), tada bus LET.
-
-    // ========== LINIJOS JUDĖJIMO FUNKCIJA ==========
-
-    function updatePlayhead(timestamp) {
-        
-        if (!isPlaying) return;
-
-        if (!startTimestamp) {
-            startTimestamp = timestamp;
-        }
-
-        const elapsed = timestamp - startTimestamp + pauseOffset;  
-        const x = elapsed * pixelsPerMs;
-
-        playhead.style.transform = `translateX(${x}px)`;
-
-        if (elapsed < totalDuration) {
-            requestAnimationFrame(updatePlayhead);
-        } else {
-            stopPlayback(); // jeigu pasiekė totalDuration pabaigą
-        }
-    }
-
-    // ========== LINIJOS PALEIDIMO JUDĖTI FUNKCIJA (PLAY) ==========
-
-    function playPianoroll() {
-        
-        if (isPlaying) return;
-        isPlaying = true;
-        startTimestamp = null;  // reset internal timer, but NOT pauseOffset
-
-        requestAnimationFrame(updatePlayhead);
-    }
-
-    // ========== LINIJOS SUSTABDYMO FUNKCIJA (PAUSE) ==========
-
-    function pausePlayback() {
-        
-        if (!isPlaying) return; // jeigu negroja, tai šios funkcijos ir nevykdyt
-        isPlaying = false;
-        const currentTime = performance.now(); // paimamas laikas, praėjęs nuo apskritai pradžios (nuo puslapio pakrovimo pradžios?)
-        // čia kad nevykdytų skaičiavimų ant null
-        if (startTimestamp !== null) {
-            pauseOffset += currentTime - startTimestamp;
-        }
-    }
-
-    // ========== LINIJOS SUSTABDYMO IR GRĄŽINIMO ATGAL FUNKCIJA (STOP) ==========
-
-    function stopPlayback() {
-
-        isPlaying = false;
-        pauseOffset = 0;
-        startTimestamp = null;
-        playhead.style.transform = `translateX(0px)`;
-        
-    }
-
-    // ========== LINIJOS JUDĖJIMO SCROLLINANT (horizontaliai) SUTVARKYMAS ==========
-
-    pianorollContainer.addEventListener("scroll", () => {
-        const offset = pianorollContainer.scrollLeft;
-        playhead.style.left = `${-offset}px`;
-    });
-
-    // ========== PLAY, PAUSE, STOP MYGTUKŲ FUNKCIONALUMAS ==========
-
-    const playButton = document.getElementById("playButton");
-    const pauseButton = document.getElementById("pauseButton");
-    const returnButton = document.getElementById("returnButton");
-
-    if (playButton) playButton.addEventListener('click', playPianoroll);
-    if (pauseButton) pauseButton.addEventListener('click', pausePlayback);
-    if (returnButton) returnButton.addEventListener('click', stopPlayback);
-    */
-
-
-
     function getAudioForPlay() {
 
-        if (!params.get("block")) {
-            console.log("Unsaved block. Playback failed.")
-            return;
-        }
-
-        if (blockAudio || isAudioLoading) return Promise.resolve();                  // Promise — žymi async funkcijos užbaigimą
+        // 1. ONLY block if an audio request is currently in progress.
+        if (isAudioLoading) return Promise.resolve();
 
         isAudioLoading = true;
 
-        console.log(params.get("block"));
+        // 2. Clear the previous audio object BEFORE requesting a new one.
+        if (blockAudio && blockAudio.src) {
+            URL.revokeObjectURL(blockAudio.src);
+        }
+        blockAudio = null; // Crucial: Clear the global variable.
 
-        return fetch(`http://localhost:6767/play_block?name=${blockId}`, {
+
+        // 3. Gather current notes (This part remains the same)
+        let currentSequence = [];
+        for (let i = 0; i < pitchRowCount; i++) {
+            let singleRowData = pianorollNotes[i];
+            singleRowData.forEach(element => {
+                // Ensure we format the data exactly how /save_block expects it
+                currentSequence.push([
+                    element.instrument, 
+                    element.note, 
+                    element.start_time_ms, 
+                    element.end_time_ms
+                ]);
+            });
+        }
+
+        // IMPROVEMENT: Handle empty sequence case for playback
+        if (currentSequence.length === 0) {
+            isAudioLoading = false;
+            console.log("Cannot play empty sequence.");
+            return Promise.resolve();
+        }
+
+        const payload = {
+            sequence: currentSequence
+        };
+        
+        // NEW: Log the sequence being sent to confirm correct times
+        console.log("Sending sequence to backend for playback:", payload.sequence);
+
+
+        // 4. Send POST request
+        return fetch("http://localhost:6767/play_block", {
             method: 'POST',
-            //headers: {"Content-Type" : "application/json"},
-            //body: JSON.stringify({name: blockId})
+            headers: {'Content-Type' : 'application/json'},
+            body: JSON.stringify(payload)
         })
-        .then(async response => {
+        .then(async response => { 
+            
             if (!response.ok) throw new Error ("Block audio retrieval error " + response.status);
 
-            const audioBlob = await response.blob();                                // perskaityt WAV duomenis kaip blob
-
-            if (blockAudio && blockAudio.src) URL.revokeObjectURL(blockAudio.src);     // pašalint senesnio įrašo URLą, jeigu jau yra naujas įrašas
-
-            const audioUrl = URL.createObjectURL(audioBlob);                        // WAV įrašą paverst laikinan audio objekto URL'an
-            blockAudio = new Audio(audioUrl);                                        // sukuriamas audio objektas
+            const audioBlob = await response.blob();
+            
+            const audioUrl = URL.createObjectURL(audioBlob);
+            blockAudio = new Audio(audioUrl);
             
             isAudioLoading = false;
-
             console.log("Audio loaded and ready for playback.");
-
-            /*const downloadButton = document.getElementById("exportButton");
-            if (downloadButton) {
-                downloadButton.addEventListener('click', downloadMainAudio);
-            }*/
-
         })
         .catch(error => {
             isAudioLoading = false;
-            console.warn("Error playing main sequence:", error);
+            console.warn("Error playing sequence:", error);
             throw error;
         });
-            
-        
     }
 
 
     // ============================== GROJIMO IR PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS (play, pause, stop) ==============================
     // Playback mygtukai turėtų turėt dvi paskirtis: 1. vizualią (linijos judėjimo kaitymas);  2. grojimo (įrašo grojimas/pristabdymas/sustabdymas) {BACKEND}
 
-    let playhead = document.getElementById("playhead");
+    const playhead = document.getElementById("playhead");
     let isPlaying = false;
     let startTimestamp = null;                              // laiko momentas, kai buvo pradėtas grojimas
     let pauseOffset = 0;                                    // how far into the track we've played (ms)
-    let pixelsPerMs = 0.1;                                  // Playback linijos judėjimo greitis (px/ms)
+    const pixelsPerMs = 0.1;                                  // Playback linijos judėjimo greitis (px/ms)
     const totalDuration = timelineWidthPx / pixelsPerMs;    // Pilnas playback grojimo ilgis (priklauso nuo pianoroll ilgio ir judėjimo greičio). KOL KAS kintamasis yra CONST, bet jeigu padarytumėm automatinį pianorollo prasiplėtimą (kai natos artėja prie galo), tada bus LET.
 
 
@@ -1043,46 +1029,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 
-    /*
-    // ========== LINIJOS PALEIDIMO JUDĖTI FUNKCIJA (PLAY) ==========
-
-    function playPlayback() {
-
-        if (isPlaying) return;
-        getAudioForPlay();  // gaut įrašą iš backendo
-        isPlaying = true;
-        startTimestamp = null;  // reset internal timer, but NOT pauseOffset
-
-        requestAnimationFrame(updatePlayhead);
-    }
-
-    // ========== LINIJOS SUSTABDYMO FUNKCIJA (PAUSE) ==========
-
-    function pausePlayback() {
-
-        if (!isPlaying) return; // jeigu negroja, tai šios funkcijos ir nevykdyt
-        blockAudio.pause();
-        isPlaying = false;
-        const currentTime = performance.now();  // paimamas laikas, praėjęs nuo apskritai pradžios (nuo puslapio pakrovimo pradžios?)
-        // čia kad nevykdytų skaičiavimų ant null
-        if (startTimestamp !== null) {
-            pauseOffset += currentTime - startTimestamp;
-        }
-    }
-
-    // ========== LINIJOS SUSTABDYMO IR GRĄŽINIMO ATGAL FUNKCIJA (STOP) ==========
-
-    function stopPlayback() {
-
-        blockAudio.pause();
-        blockAudio.currentTime = 0;
-        isPlaying = false;
-        pauseOffset = 0;
-        startTimestamp = null;
-        playhead.style.transform = `translateX(0px)`;
-
-    }*/
-
     // ========== LINIJOS JUDĖJIMO SCROLLINANT (horizontaliai) SUTVARKYMAS ==========
 
     pianorollContainer.addEventListener("scroll", () => {
@@ -1099,8 +1045,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (playButton) playButton.addEventListener('click', playPlayback);
     if (pauseButton) pauseButton.addEventListener('click', pausePlayback);
     if (returnButton) returnButton.addEventListener('click', stopPlayback);
-
-    
-
 
 });
