@@ -46,25 +46,19 @@ class SaveBlockRequest(BaseModel):
     sequence: list[tuple[str, str, float, float]]
 
 
-class SaveMainRequest(BaseModel):
-    sequence: list[tuple[str, float, float]]
-
-
-class AddToMainRequest(BaseModel):
+class SaveBlockToMainRequest(BaseModel):
     name: str
     start: float
     end: float
 
 
-class AddTrackInstrument(BaseModel):
+class AddTrackInstrumentRequest(BaseModel):
     track_nr: int
     instrument: str
 
 
-class SaveBlockToMain(BaseModel):
+class DeleteBlockRequest(BaseModel):
     name: str
-    start: float
-    end: float
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -99,7 +93,7 @@ def get_note(request: NoteRequest):
 
 
 @app.post("/add_track_instrument")
-def add_track_instrument(request: AddTrackInstrument):
+def add_track_instrument(request: AddTrackInstrumentRequest):
     return backend_functions.add_track_instrument(request)
 
 
@@ -113,19 +107,9 @@ def save_block(request: SaveBlockRequest):
     return backend_functions.save_block(request)
 
 
-@app.post("/add_block_to_main")
-def add_block_to_main(request: AddToMainRequest):
-    return backend_functions.add_block_to_main(request)
-
-
-@app.post("/change_block_coordinates")
-def change_block_coordinates(request: ChangeBlockCoordinates):
-    return backend_functions.change_block_coordinates(request)
-
-
-@app.post("/save_block_changes_to_main")
-def save_block_changes_to_main(request: AddToMainRequest):
-    return backend_functions.save_block_changes_to_main(request)
+@app.post("/save_block_to_main")
+def save_block_to_main(request: SaveBlockToMainRequest):
+    return backend_functions.save_block_to_main(request)
 
 
 @app.get("/get_block")
@@ -138,11 +122,6 @@ def play_block(request: PlayBlockRequest):
     return backend_functions.play_block(request)
 
 
-@app.post("/save_main")
-def save_main(request: SaveMainRequest):
-    return backend_functions.save_main(request)
-
-
 @app.get("/get_main")
 def get_main():
     return backend_functions.get_main()
@@ -151,6 +130,16 @@ def get_main():
 @app.post("/play_main", response_class=FileResponse)
 def play_main():
     return backend_functions.play_main()
+
+
+@app.post("/delete_block")
+def delete_block(request: DeleteBlockRequest):
+    return backend_functions.delete_block(request)
+
+
+@app.post("/delete_block_from_main")
+def delete_block_from_main(request: DeleteBlockRequest):
+    return backend_functions.delete_block_from_main(request)
 
 
 if __name__ == "__main__":

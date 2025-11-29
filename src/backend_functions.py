@@ -22,7 +22,18 @@ def generate_music(
     sequence: list[tuple[str, str, float, float]],
 ):
     if not sequence:
-        raise HTTPException(status_code=400, detail="Empty sequence")
+        temp_dir = Path(tempfile.mkdtemp())
+        output_path = temp_dir / "silence.wav"
+        AudioSegment.silent(duration=50, frame_rate=SAMPLE_RATE).export(
+            output_path, format="wav"
+        )
+
+        return FileResponse(
+            path=output_path,
+            media_type="audio/wav",
+            filename="silence.wav",
+            background=BackgroundTask(shutil.rmtree, temp_dir),
+        )
 
     max_end = 0
     validated_sequence = []
@@ -122,7 +133,8 @@ def save_block(request):
 
 def save_block_to_main(request):
     main[request.name] = [request.start, request.end]
-    return {"status": "success"}
+    return {"status": "saved"}
+
 
 def get_block(name):
     if name not in blocks:
@@ -134,34 +146,42 @@ def play_block(request):
     return generate_music(request.sequence)
 
 
-def save_main(request):
-    global main
-    main = request.sequence
-    return {"status": "main saved"}
-
-
 def get_main():
-    return main
+    return [[key, *values] for key, values in main.items()]
 
 
 def play_main():
-    for block_ref in main:
-        block_name = block_ref[0]
+    temp_seq = []
+
+    for block_name, block in main.items():
         if block_name not in blocks:
             raise HTTPException(
                 status_code=404,
                 detail=f"Block '{block_name}' not found in main sequence",
             )
+        else:
+            for insides in blocks[block_name]:
+                local_start = insides[2]
+                local_end = insides[3]
+                global_start = block[0]
+                global_end = block[1]
 
-    temp_seq = []
-    for block in main:
-        for insides in blocks[block[0]]:
-            local_start = insides[2]
-            local_end = insides[3]
-            global_start = block[1]
-            global_end = block[2]
-            new_start = local_start + global_start
-            new_end = min(local_end + global_start, global_end)
-            temp_seq.append((insides[0], insides[1], new_start, new_end))
+                new_start = local_start + global_start
+                new_end = min(local_end + global_start, global_end)
+                temp_seq.append((insides[0], insides[1], new_start, new_end))
 
     return generate_music(temp_seq)
+
+
+def delete_block(request):
+    if request.name in blocks:
+        del blocks[request.name]
+        return {"status": f"Block '{request.name}' deleted from storage"}
+    return {"status": f"Block '{request.name}' not found in storage"}
+
+
+def delete_block_from_main(request):
+    if request.name in main:
+        del main[request.name]
+        return {"status": f"Block '{request.name}' deleted from main sequence"}
+    return {"status": f"Block '{request.name}' not found in main sequence"}
