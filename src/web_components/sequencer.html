@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sequencer | DumDumDaw</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"> 
+    <link href="web_components/sequencer.css" rel="stylesheet"> 
+</head>
+<body>
+    <audio id="audio-player"></audio>
+
+    <header>
+        <div id="header-controls-container">
+            <a href="/">
+                <img src="images/logo.svg" alt="logo" width="110" height="130" class="header-logo">
+            </a>
+            <button id="playButton" class="button square" title="Play"><i class="material-icons">play_arrow</i></button>
+            <button id="pauseButton" class="button square" title="Pause"><i class="material-icons">pause</i></button>
+            <button id="returnButton" class="button square" title="Return"><i class="material-icons">stop</i></button>
+            <button id="saveComposition" class="button text">Save</button>
+            <button id="exportButton" class="button text" title="Export">Export</button>
+        </div>
+    </header>
+    
+    <div id="whole-sequencer-container">
+        <div id="labels" class="sequencer-labels-column"></div>
+        <div id="sequencer-container" class="sequencer-timeline-container">
+            <div id="sequencer" class="sequencer-timeline"></div>
+            <div id="playhead"></div>
+        </div>
+    </div>
+
+    <script src="web_components/sequencer.js"></script>
+</body>
+</html>

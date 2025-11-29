@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piano Roll | DumDumDaw</title>
+    <link href="web_components/pianoroll.css" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <audio id="audio-player"></audio>
+    
+    <header>
+        <div id="header-controls-container">
+            <a href="/">
+                <img src="images/logo.svg" alt="logo" width="110" height="130" class="header-logo">
+            </a>
+            <button id="playButton" class="button square" title="Play"><i class="material-icons">play_arrow</i></button>
+            <button id="pauseButton" class="button square" title="Pause"><i class="material-icons">pause</i></button>
+            <button id="returnButton" class="button square" title="Return"><i class="material-icons">stop</i></button>
+            <p id="instrumentName"></p>
+            <p id="blockName"></p>
+            <button id="saveNoteBlock" class="button text">Save</button>
+        </div>
+    </header>
+    
+    <div id="whole-pianoroll-container">
+        <div id="pitchLabels" class="pitch-labels-container">
+        </div>
+        
+        <div id="pianoroll-container">
+            <div id="pianoroll" class="syncedHorizontalScroll pianoroll-grid"></div>
+            <div id="playhead"></div>
+        </div>
+    </div>
+    
+    <script src="web_components/pianoroll.js"></script>
+</body>
+</html>
