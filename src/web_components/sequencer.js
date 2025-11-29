@@ -390,31 +390,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ========== ESAMŲ INSTRUMENTŲ GAVIMAS (iš backend) ==========
 
     async function getInstrumentsAndAddToList() {
-
         try {
-            // Instrumentų gavimas
-            const response = await fetch("http://localhost:6767/get_instruments")
+            console.log("Attempting to fetch instruments from http://localhost:6767/get_instruments...");
+
+            // Instrumentų gavimas (Getting instruments)
+            const response = await fetch("http://localhost:6767/get_instruments");
+            
+            console.log(`Fetch response received. Status: ${response.status}.`);
+
+            // Check if the HTTP status indicates success (e.g., 200-299)
+            if (!response.ok) {
+                // Throw an error if the status is not ok (e.g., 404, 500)
+                throw new Error(`HTTP error! Status: ${response.status}. Response text: ${await response.text().then(t => t.substring(0, 100) + '...').catch(() => 'N/A')}`);
+            }
+
+            // Try to parse the JSON data (this is where large data can cause issues)
             const data = await response.json();
-            const instrumentsData = data;       // {instrumentas1 : ['C1', 'Cs1', ...], instrumentas2 : [...], ...}
-            console.log(instrumentsData);
+            const instrumentsData = data;
+            
+            console.log("JSON parsed successfully. Instrument data structure:", instrumentsData);
 
             // Instrumentų integravimas sequencer puslapio frontende
-
             const instrumentArray = Object.keys(instrumentsData);
-            console.log(instrumentArray);
+            console.log(`Found ${instrumentArray.length} instruments.`);
 
             instrumentArray.forEach(instrument => {
+                // NOTE: Ensure 'prepareInstrumentNameForDisplay' is defined and works correctly
+                let capitalizedInstrumentName = prepareInstrumentNameForDisplay(instrument); 
 
-                // Paruošim instrumentų vardus (text: ...), kad prasidėtų didžiosiomis raidėmis ir pan.
-                let capitalizedInstrumentName = prepareInstrumentNameForDisplay(instrument);    // padarys visus instrumento pavadinimo žodžius iš didžiosios raidės
-
+                // NOTE: Ensure 'instrumentList' is accessible in this scope (it should be 
+                // defined using 'let' or 'var' outside or passed as an argument).
                 instrumentList.push({value: instrument, text: capitalizedInstrumentName});
-            })
+            });
+            
+            console.log("Instruments added to instrumentList successfully.");
+            
         } catch (error) {
-            console.error("Failed to fetch instruments:", error);
+            // This will catch: 
+            // 1. Network errors (e.g., server down, CORS blocked)
+            // 2. HTTP errors (e.g., 404, 500 caught above)
+            // 3. JSON parsing errors (e.g., if response is too large or malformed)
+            console.error("Failed to fetch or process instruments:", error);
+            
+            // Optionally alert the user (for debugging or production error)
+            // alert(`Klaida gaunant instrumentus: ${error.message}`);
         }
     }
-
     // ===== Instrumento vardų (rodysimų instrumentų dropdown meniuje) paruošimas (kad būtų iš didž. raidės) =====
 
     function prepareInstrumentNameForDisplay(instrument) {
