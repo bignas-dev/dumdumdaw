@@ -23,12 +23,7 @@ uv python pin 3.12.3
 uv sync
 ```
 
-5. Run backend
+5. Run server
 ```bash
-uv run backend/main.py
-```
-
-6. Run frontend (on a different terminal)
-```bash
-uv run frontend/main.py
+uv run src/main.py
 ```
