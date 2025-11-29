@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DumDumDaw - The easiest DAW for beginners to create MIDI beats">
+    <title>DumDumDaw | Simple MIDI Beat Maker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .main-content {
+            background-color: #344966; 
+            min-height: 100vh;
+            padding-top: 120px;                              
+        }
+                                                
+        .header-content {
+            background-color: #E6AACE;
+            padding: 7px 20px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto 40px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+                                                
+        .navigation-link {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+        }
+                                                
+        .logo {
+            height: 60px;
+            width: auto;
+        }
+
+        .logo:focus {
+            outline: 3px solid #ffcc00;
+        }
+                                                
+        h1.logo-text {
+            font-size: 34px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-left: 10px;
+        }
+        
+        .content-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+                                                
+        .content-block {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 60px;
+            padding: 40px 20px;
+        } 
+
+        .left-block {
+            background-color: #E6AACE;
+            border-radius: 12px;
+            padding: 40px 30px;
+            min-height: 400px;
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            z-index: 2;
+        }
+
+        .text-block {
+            font-weight: 700;
+            font-size: 56px;
+            line-height: 1.1;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+                                                
+        .smalltext-block {
+            font-weight: 400;
+            font-size: 28px;
+            text-align: left;
+            line-height: 1.5;
+            letter-spacing: 1px;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            max-width: 500px;
+        }
+                                                
+        .app-screenshot {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            margin: 20px;
+        }
+                                                
+        .cta-button {
+            display: inline-block;
+            width: 240px;
+            height: 70px;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            color: white; 
+            font-size: 28px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 70px;
+            text-decoration: none;
+            margin-top: 20px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            border: 2px solid #000;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            background: linear-gradient(135deg, #111111 0%, #444444 100%);
+        }
+        
+        .cta-button:focus {
+            outline: 3px solid #ffcc00;
+            outline-offset: 2px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 1100px) {
+            .content-block {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .left-block {
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            
+            .smalltext-block {
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .text-block {
+                font-size: 42px;
+            }
+            
+            .smalltext-block {
+                font-size: 24px;
+            }
+            
+            .cta-button {
+                width: 200px;
+                font-size: 24px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                padding: 15px;
+            }
+            
+            h1.logo-text {
+                font-size: 28px;
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .text-block {
+                font-size: 36px;
+            }
+            
+            .smalltext-block {
+                font-size: 20px;
+                letter-spacing: 0.5px;
+            }
+            
+            .cta-button {
+                width: 180px;
+                height: 60px;
+                font-size: 20px;
+                line-height: 60px;
+            }
+            
+            .main-content {
+                padding-top: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <header class="header-content">
+            <a href="/" class="navigation-link" aria-label="Go to homepage">
+                <img class="logo" src="logo.svg" alt="DumDumDaw Logo">
+                <h1 class="logo-text">DumDumDaw</h1>
+            </a>
+        </header>
+        
+        <main class="content-container">
+            <div class="content-block">
+                <div class="left-block">
+                    <h1 class="text-block">The Best DAW For Dumdums!</h1>
+                    <p class="smalltext-block">Make simple MIDI beats,<br>all in an easy-to-use<br>interface.</p>
+                    <a href="/sequencer" class="cta-button" role="button">Open Builder</a>
+                </div>
+                
+                <div class="screenshot-container">
+                    <img class="app-screenshot" src="interface_img.png" alt="DumDumDaw interface showing beat sequencer">
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
