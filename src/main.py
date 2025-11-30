@@ -8,9 +8,8 @@ from fastapi.responses import HTMLResponse
 import uvicorn
 import backend_functions
 
-
-SAMPLE_RATE = 44100
-MAX_DURATION = 1_000_000
+HOST = "127.0.0.1"
+PORT = 3010
 
 app = FastAPI(title="DumDumDaw")
 
@@ -37,28 +36,32 @@ class NoteRequest(BaseModel):
     note: str
 
 
-class PlayBlockRequest(BaseModel):
-    sequence: list[tuple[str, str, float, float]]
+class AddTrackInstrumentRequest(BaseModel):
+    track_nr: int
+    instrument: str
+    fingerprint: str
 
 
 class SaveBlockRequest(BaseModel):
     name: str
     sequence: list[tuple[str, str, float, float]]
+    fingerprint: str
 
 
 class SaveBlockToMainRequest(BaseModel):
     name: str
     start: float
     end: float
+    fingerprint: str
 
 
-class AddTrackInstrumentRequest(BaseModel):
-    track_nr: int
-    instrument: str
-
-
-class DeleteBlockRequest(BaseModel):
+class GetBlockRequest(BaseModel):
     name: str
+    fingerprint: str
+
+
+class PlayBlockRequest(BaseModel):
+    sequence: list[tuple[str, str, float, float]]
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -98,8 +101,8 @@ def add_track_instrument(request: AddTrackInstrumentRequest):
 
 
 @app.get("/get_track_instruments")
-def get_track_instruments():
-    return backend_functions.get_track_instruments()
+def get_track_instruments(fingerprint: str):
+    return backend_functions.get_track_instruments(fingerprint)
 
 
 @app.post("/save_block")
@@ -113,8 +116,8 @@ def save_block_to_main(request: SaveBlockToMainRequest):
 
 
 @app.get("/get_block")
-def get_block(name: str):
-    return backend_functions.get_block(name)
+def get_block(request: GetBlockRequest):
+    return backend_functions.get_block(request)
 
 
 @app.post("/play_block", response_class=FileResponse)
@@ -123,26 +126,16 @@ def play_block(request: PlayBlockRequest):
 
 
 @app.get("/get_main")
-def get_main():
-    return backend_functions.get_main()
+def get_main(fingerprint: str):
+    return backend_functions.get_main(fingerprint)
 
 
 @app.post("/play_main", response_class=FileResponse)
-def play_main():
-    return backend_functions.play_main()
-
-
-@app.post("/delete_block")
-def delete_block(request: DeleteBlockRequest):
-    return backend_functions.delete_block(request)
-
-
-@app.post("/delete_block_from_main")
-def delete_block_from_main(request: DeleteBlockRequest):
-    return backend_functions.delete_block_from_main(request)
+def play_main(fingerprint: str):
+    return backend_functions.play_main(fingerprint)
 
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=6767)
+    uvicorn.run(app, host=HOST, port=PORT)

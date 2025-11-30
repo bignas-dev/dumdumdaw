@@ -12,18 +12,12 @@ cd Meilus-Co-Sound
 
 2. Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
 
-3. Install and pin python 3.12.3
-```bash
-uv python install 3.12.3
-uv python pin 3.12.3
-```
-
-4. Install dependencies
+3. Install dependencies
 ```bash
 uv sync
 ```
 
-5. Run server
+4. Run server
 ```bash
 uv run src/main.py
 ```

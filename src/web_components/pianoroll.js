@@ -1,3 +1,15 @@
+// Function to generate and retrieve a persistent user fingerprint
+function getFingerprint() {
+    let fp = localStorage.getItem('user_fingerprint');
+    if (!fp) {
+        // Simple UUID-like generation for a persistent unique ID
+        fp = 'fp-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+        localStorage.setItem('user_fingerprint', fp);
+    }
+    return fp;
+}
+const USER_FINGERPRINT = getFingerprint();
+
 document.addEventListener('DOMContentLoaded', async () => {
 
     // GARSO GROJIKAS !!!!!
@@ -464,11 +476,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ========== SUKURTOS NATOS DUOMENŲ SIUNTIMO IR GAVIMO FUNKCIJA (KAD JĄ PAGROTŲ) {BACKEND} ==========
 
     function sendSingleNote() {
-
-        // klaidų nustatymui
         console.log(JSON.stringify(singleNoteRegister));
 
-        fetch("http://localhost:6767/get_note", {
+        // Pakeista į santykinį kelio adresą: /get_note
+        fetch("/get_note", { // PAKEISTAS URL
             method: 'POST',
             headers: {'Content-Type' : 'application/json'},
             body: JSON.stringify(singleNoteRegister)
@@ -495,7 +506,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         console.log(blockId);
 
-        fetch(`http://localhost:6767/get_block?name=${blockId}`)
+        // Pakeista į santykinį kelio adresą ir pridėtas fingerprint
+        fetch(`/get_block?name=${blockId}&fingerprint=${USER_FINGERPRINT}`) // PAKEISTAS URL & PRIDĖTAS FINGERPRINT
             .then (response => response.json())
             .then (data => {
                 console.log(data);                              // data(natų duomenys): [[instrument, note, start_.., end_..], [a,b,c,d], [...], ...]
@@ -631,21 +643,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         const noteBlockName = params.get("block");
         if (!noteBlockName) return; // Only for existing blocks
 
+        const payload = {name: noteBlockName, fingerprint: USER_FINGERPRINT}; // PRIDĖTAS FINGERPRINT
+
         // 1. Delete from blocks (storage)
-        fetch("http://localhost:6767/delete_block", {
+        // Pakeista į santykinį kelio adresą: /delete_block
+        fetch("/delete_block", { // PAKEISTAS URL
             method: "POST",
             headers: {'Content-Type' : 'application/json'},
-            body: JSON.stringify({name: noteBlockName})
+            body: JSON.stringify(payload)
         })
         .then(response => response.json())
         .then(data => console.log("Deleted from blocks OK:", data))
         .catch(err => console.warn("Backend block delete failed:", err));
 
         // 2. Delete from main (sequencer track)
-        fetch("http://localhost:6767/delete_block_from_main", {
+        // Pakeista į santykinį kelio adresą: /delete_block_from_main
+        fetch("/delete_block_from_main", { // PAKEISTAS URL
             method: "POST",
             headers: {'Content-Type' : 'application/json'},
-            body: JSON.stringify({name: noteBlockName})
+            body: JSON.stringify(payload)
         })
         .then(response => response.json())
         .then(data => {
@@ -673,11 +689,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log(noteBlockName);
 
         // čia jau tas gatavas objectas, kurį siųsim backendui (with normalized sequence)
-        const noteBlockData = {name: noteBlockName, sequence: preparedData.sequence};
+        const noteBlockData = {
+            name: noteBlockName, 
+            sequence: preparedData.sequence,
+            fingerprint: USER_FINGERPRINT // PRIDĖTAS FINGERPRINT
+        };
         console.log(noteBlockData);
 
         // siuntimas backendui (ir status atsako gavimas iš jo) 
-        fetch("http://localhost:6767/save_block", {
+        // Pakeista į santykinį kelio adresą: /save_block
+        fetch("/save_block", { // PAKEISTAS URL
             method: 'POST',
             headers: {'Content-Type' : 'application/json'},
             body: JSON.stringify(noteBlockData)
@@ -706,12 +727,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         const preparedBlockDataForMain = {
             name: originalBlockId, 
             start:  currentBlockStartPosInSequencer, 
-            end: duration_ms + currentBlockStartPosInSequencer // Correctly calculate new end time
+            end: duration_ms + currentBlockStartPosInSequencer, // Correctly calculate new end time
+            fingerprint: USER_FINGERPRINT // PRIDĖTAS FINGERPRINT
         };
         
         console.log(preparedBlockDataForMain);
         
-        fetch("http://localhost:6767/save_block_to_main", {
+        // Pakeista į santykinį kelio adresą: /save_block_to_main
+        fetch("/save_block_to_main", { // PAKEISTAS URL
             method: "POST",
             headers: {'Content-Type' : 'application/json'},
             body: JSON.stringify(preparedBlockDataForMain)
@@ -749,11 +772,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const noteBlockName = trackId + "_" + instrument + "_" + nowFullyFormated;
 
         // čia jau tas gatavas objectas, kurį siųsim backendui
-        const noteBlockData = {name: noteBlockName, sequence: preparedData.sequence};
+        const noteBlockData = {
+            name: noteBlockName, 
+            sequence: preparedData.sequence,
+            fingerprint: USER_FINGERPRINT // PRIDĖTAS FINGERPRINT
+        };
         console.log(noteBlockData);
 
         // siuntimas backendui (ir status atsako gavimas iš jo) 
-        fetch("http://localhost:6767/save_block", {
+        // Pakeista į santykinį kelio adresą: /save_block
+        fetch("/save_block", { // PAKEISTAS URL
             method: 'POST',
             headers: {'Content-Type' : 'application/json'},
             body: JSON.stringify(noteBlockData)
@@ -784,11 +812,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const preparedBlockDataForMain = {
             name: noteBlockData.name, 
             start: start_offset_ms, 
-            end: duration_ms + start_offset_ms // duration + start_offset
+            end: duration_ms + start_offset_ms, // duration + start_offset
+            fingerprint: USER_FINGERPRINT // PRIDĖTAS FINGERPRINT
         };
         console.log(preparedBlockDataForMain);
         
-        fetch("http://localhost:6767/save_block_to_main", {
+        // Pakeista į santykinį kelio adresą: /save_block_to_main
+        fetch("/save_block_to_main", { // PAKEISTAS URL
             method: 'POST',
             headers: {'Content-Type' : 'application/json'},
             body: JSON.stringify(preparedBlockDataForMain)
@@ -818,7 +848,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const currentlyEditedBlockName = params.get("block");
         
-        fetch("http://localhost:6767/get_main")
+        // Pakeista į santykinį kelio adresą ir pridėtas fingerprint
+        fetch(`/get_main?fingerprint=${USER_FINGERPRINT}`) // PAKEISTAS URL & PRIDĖTAS FINGERPRINT
             .then(response => response.json())
             .then(data => {
                 data.forEach(singleBlockData => {
@@ -835,10 +866,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function setTrackInstrument(trackId, chosenInstrument) {
 
-        fetch("http://localhost:6767/add_track_instrument", {
+        const payload = {
+            track_nr: trackId, 
+            instrument: chosenInstrument,
+            fingerprint: USER_FINGERPRINT // PRIDĖTAS FINGERPRINT
+        };
+
+        // Pakeista į santykinį kelio adresą: /add_track_instrument
+        fetch("/add_track_instrument", { // PAKEISTAS URL
             method: "POST",
             headers: {"Content-Type" : "application/json"},
-            body: JSON.stringify({track_nr: trackId, instrument: chosenInstrument})
+            body: JSON.stringify(payload)
         })
         .then(response => response.json())
         .then(status => console.log(status))
@@ -850,7 +888,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function getInstrumentNoteData() {
 
-        const response = await fetch("http://localhost:6767/get_instruments")
+        // Pakeista į santykinį kelio adresą ir pridėtas fingerprint
+        const response = await fetch(`/get_instruments?fingerprint=${USER_FINGERPRINT}`) // PAKEISTAS URL & PRIDĖTAS FINGERPRINT
         const data = await response.json();                                     // data: {instrument1 : ["C3", "Cs3", ...], instrument2 : [...], ...}
         existingInstrumentNotes = data[instrument];
 
@@ -894,7 +933,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         const payload = {
-            sequence: currentSequence
+            sequence: currentSequence,
         };
         
         // NEW: Log the sequence being sent to confirm correct times
@@ -902,7 +941,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
         // 4. Send POST request
-        return fetch("http://localhost:6767/play_block", {
+        // Pakeista į santykinį kelio adresą: /play_block
+        return fetch("/play_block", { // PAKEISTAS URL
             method: 'POST',
             headers: {'Content-Type' : 'application/json'},
             body: JSON.stringify(payload)

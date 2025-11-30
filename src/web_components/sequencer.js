@@ -1,3 +1,15 @@
+// Function to generate and retrieve a persistent user fingerprint
+function getFingerprint() {
+    let fp = localStorage.getItem('user_fingerprint');
+    if (!fp) {
+        // Simple UUID-like generation for a persistent unique ID
+        fp = 'fp-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+        localStorage.setItem('user_fingerprint', fp);
+    }
+    return fp;
+}
+const USER_FINGERPRINT = getFingerprint();
+
 document.addEventListener('DOMContentLoaded', async () => {
 
     // AUDIO OBJEKTUI
@@ -354,10 +366,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function saveMainComposition() {
 
-        const preparedCompositionData = {sequence: mainBlockData};  // mainBlockData = [[name, start, duration], [x,y,z], ...]
+        const preparedCompositionData = {
+            sequence: mainBlockData, // mainBlockData = [[name, start, duration], [x,y,z], ...]
+            fingerprint: USER_FINGERPRINT // PRIDĖTAS FINGERPRINT
+        };
         console.log(preparedCompositionData);
 
-        fetch("http://localhost:6767/save_main", {
+        // Pakeista į santykinį kelio adresą: /save_main
+        fetch("/save_main", { // PAKEISTAS URL
             method: 'POST',
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(preparedCompositionData)
@@ -371,19 +387,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ========== SEQUENCERIO KOMPOZICIJOS GAVIMAS IR PAKROVIMAS ==========
 
-    async function getMainComposition() {
+    // sequencer.js
 
+    async function getMainComposition() {
         try {
-            const response = await fetch("http://localhost:6767/get_main");
-            const data  = await response.json();
+            // SUFORMUOJAMAS URL: Naudojama encodeURIComponent užtikrinti saugų URL perdavimą.
+            const url = `/get_main?fingerprint=${encodeURIComponent(USER_FINGERPRINT)}`;
+            
+            console.log(`Fetching: ${url}`); // Patikrinkite, ar URL yra teisingas: /get_main?fingerprint=kazkoks_raktas
+
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                 // Čia sugautume klaidas, įskaitant 422, jei fingerprint VIS TIEK būtų tuščias.
+                 console.error(`HTTP error! status: ${response.status} for URL: ${url}`);
+                 throw new Error(`Server returned status ${response.status}`);
+            }
+
+            const data = await response.json();
             mainBlockData = data;
-            console.log(mainBlockData); // [[name, start, duration], [.., .., ..], ...]
+            console.log("Main composition loaded:", mainBlockData); 
+
         } catch (error) {
             console.error("Failed to fetch main composition:", error);
-            // Initialize with empty data on failure
             mainBlockData = []; 
         }
-
     }
 
 
@@ -391,10 +419,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function getInstrumentsAndAddToList() {
         try {
-            console.log("Attempting to fetch instruments from http://localhost:6767/get_instruments...");
+            console.log("Attempting to fetch instruments from /get_instruments...");
 
             // Instrumentų gavimas (Getting instruments)
-            const response = await fetch("http://localhost:6767/get_instruments");
+            // Pakeista į santykinį kelio adresą ir pridėtas fingerprint: /get_instruments
+            const response = await fetch(`/get_instruments`); // PAKEISTAS URL & PRIDĖTAS FINGERPRINT
             
             console.log(`Fetch response received. Status: ${response.status}.`);
 
@@ -458,7 +487,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function getTrackInstruments() {
 
         try {
-            const response = await fetch("http://localhost:6767/get_track_instruments")
+            // Pakeista į santykinį kelio adresą ir pridėtas fingerprint: /get_track_instruments
+            const response = await fetch(`/get_track_instruments?fingerprint=${USER_FINGERPRINT}`) // PAKEISTAS URL & PRIDĖTAS FINGERPRINT
             const data = await response.json();
             trackInstruments = data;
         } catch (error) {
@@ -486,7 +516,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // NOTE: The cleanup for mainAudio (URL.revokeObjectURL) is now done 
         // in makeDraggable or when a new audio is successfully loaded.
 
-        return fetch("http://localhost:6767/play_main", {
+        // Pakeista į santykinį kelio adresą ir pridėtas fingerprint: /play_main
+        return fetch(`/play_main?fingerprint=${USER_FINGERPRINT}`, { // PAKEISTAS URL & PRIDĖTAS FINGERPRINT
             method: 'POST'
         })
         .then(async response => {
@@ -641,7 +672,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("Starting audio download...");
 
         // Send the POST request to render the full sequence
-        fetch("http://localhost:6767/play_main", {
+        // Pakeista į santykinį kelio adresą ir pridėtas fingerprint: /play_main
+        fetch(`/play_main?fingerprint=${USER_FINGERPRINT}`, { // PAKEISTAS URL & PRIDĖTAS FINGERPRINT
             method: 'POST',
         })
         .then(async response => {

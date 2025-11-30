@@ -13,10 +13,6 @@ SAMPLE_RATE = 44100
 SAMPLES_DIR = Path(__file__).parent / "samples"
 MAX_DURATION = 1_000_000
 
-blocks = {}
-main = {}
-track_instruments = {}
-
 
 def generate_music(
     sequence: list[tuple[str, str, float, float]],
@@ -113,75 +109,72 @@ def get_instruments():
     return instrument_data
 
 
+track_instruments = defaultdict(lambda: defaultdict(str))
+blocks = defaultdict(lambda: defaultdict(list))
+main = defaultdict(lambda: defaultdict(list))
+
+
 def get_note(request):
     return generate_music([(request.instrument, request.note, 0, 500)])
 
 
 def add_track_instrument(request):
-    track_instruments[request.track_nr] = request.instrument
+    track_instruments[request.fingerprint][request.track_nr] = request.instrument
     return {"status": "added"}
 
 
-def get_track_instruments():
-    return track_instruments
+def get_track_instruments(fingerprint):
+    return track_instruments[fingerprint]
 
 
 def save_block(request):
-    blocks[request.name] = request.sequence
+    blocks[request.fingerprint][request.name] = request.sequence
     return {"status": "saved"}
 
 
 def save_block_to_main(request):
-    main[request.name] = [request.start, request.end]
+    main[request.fingerprint][request.name] = [request.start, request.end]
     return {"status": "saved"}
 
 
-def get_block(name):
-    if name not in blocks:
-        raise HTTPException(status_code=404, detail=f"Block '{name}' not found")
-    return blocks[name]
+def get_block(request):
+    return blocks[request.fingerprint][request.name]
 
 
 def play_block(request):
     return generate_music(request.sequence)
 
 
-def get_main():
-    return [[key, *values] for key, values in main.items()]
+def get_main(fingerprint):
+    user_data = main[fingerprint]  
+    
+    return [[key, *values] for key, values in user_data.items()]
 
 
-def play_main():
+def play_main(fingerprint):
     temp_seq = []
 
-    for block_name, block in main.items():
-        if block_name not in blocks:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Block '{block_name}' not found in main sequence",
-            )
-        else:
-            for insides in blocks[block_name]:
-                local_start = insides[2]
-                local_end = insides[3]
-                global_start = block[0]
-                global_end = block[1]
+    user_main = main.get(fingerprint)
+    user_blocks = blocks.get(fingerprint)
 
+    if not user_main or not user_blocks:
+        return generate_music([])  
+
+    for block_name, block_position in user_main.items():
+        if block_name in user_blocks:
+            
+            note_sequence = user_blocks[block_name]
+            
+            global_start = block_position[0]
+            global_end = block_position[1]
+
+            for note_data in note_sequence:
+                
+                inst, note, local_start, local_end = note_data
+                
                 new_start = local_start + global_start
                 new_end = min(local_end + global_start, global_end)
-                temp_seq.append((insides[0], insides[1], new_start, new_end))
+                
+                temp_seq.append((inst, note, new_start, new_end))
 
     return generate_music(temp_seq)
-
-
-def delete_block(request):
-    if request.name in blocks:
-        del blocks[request.name]
-        return {"status": f"Block '{request.name}' deleted from storage"}
-    return {"status": f"Block '{request.name}' not found in storage"}
-
-
-def delete_block_from_main(request):
-    if request.name in main:
-        del main[request.name]
-        return {"status": f"Block '{request.name}' deleted from main sequence"}
-    return {"status": f"Block '{request.name}' not found in main sequence"}
