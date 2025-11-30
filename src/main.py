@@ -1,11 +1,9 @@
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
-import uvicorn
 import backend_functions
 
 HOST = "127.0.0.1"
@@ -55,11 +53,6 @@ class SaveBlockToMainRequest(BaseModel):
     fingerprint: str
 
 
-class GetBlockRequest(BaseModel):
-    name: str
-    fingerprint: str
-
-
 class PlayBlockRequest(BaseModel):
     sequence: list[tuple[str, str, float, float]]
 
@@ -86,13 +79,23 @@ def pianoroll(track: int):
 
 
 @app.get("/get_instruments")
-def get_instruments():
+async def get_instruments():
     return backend_functions.get_instruments()
 
 
 @app.post("/get_note", response_class=FileResponse)
-def get_note(request: NoteRequest):
+async def get_note(request: NoteRequest):
     return backend_functions.get_note(request)
+
+
+@app.post("/play_block", response_class=FileResponse)
+async def play_block(request: PlayBlockRequest):
+    return backend_functions.play_block(request)
+
+
+@app.post("/play_main", response_class=FileResponse)
+async def play_main(fingerprint: str):
+    return backend_functions.play_main(fingerprint)
 
 
 @app.post("/add_track_instrument")
@@ -116,23 +119,13 @@ def save_block_to_main(request: SaveBlockToMainRequest):
 
 
 @app.get("/get_block")
-def get_block(request: GetBlockRequest):
-    return backend_functions.get_block(request)
-
-
-@app.post("/play_block", response_class=FileResponse)
-def play_block(request: PlayBlockRequest):
-    return backend_functions.play_block(request)
+def get_block(name: str, fingerprint: str):
+    return backend_functions.get_block(name, fingerprint)
 
 
 @app.get("/get_main")
 def get_main(fingerprint: str):
     return backend_functions.get_main(fingerprint)
-
-
-@app.post("/play_main", response_class=FileResponse)
-def play_main(fingerprint: str):
-    return backend_functions.play_main(fingerprint)
 
 
 if __name__ == "__main__":

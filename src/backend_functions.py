@@ -9,36 +9,65 @@ from pydub.exceptions import CouldntDecodeError
 from starlette.background import BackgroundTask
 import numpy as np
 
+AUDIO_CACHE = {}
+
 SAMPLE_RATE = 44100
 SAMPLES_DIR = Path(__file__).parent / "samples"
 MAX_DURATION = 1_000_000
 
 
+def get_audio_segment(inst: str, note: str, sample_rate: int) -> AudioSegment:
+    cache_key = (inst, note)
+    if cache_key in AUDIO_CACHE:
+        return AUDIO_CACHE[cache_key]
+
+    sample_path = SAMPLES_DIR / inst / f"{note}.wav"
+
+    if not sample_path.exists():
+        raise HTTPException(
+            status_code=404, detail=f"Sample not found: {inst}/{note}.wav"
+        )
+
+    try:
+        audio = AudioSegment.from_file(sample_path)
+    except CouldntDecodeError:
+        raise HTTPException(status_code=500, detail="Audio decoding failed")
+
+    if audio.frame_rate != sample_rate:
+        audio = audio.set_frame_rate(sample_rate)
+
+    AUDIO_CACHE[cache_key] = audio
+    return audio
+
+
 def generate_music(
     sequence: list[tuple[str, str, float, float]],
 ):
+    SILENCE_FILENAME = "silence.opus"
+
     if not sequence:
         temp_dir = Path(tempfile.mkdtemp())
-        output_path = temp_dir / "silence.wav"
+        output_path = temp_dir / SILENCE_FILENAME
+
         AudioSegment.silent(duration=50, frame_rate=SAMPLE_RATE).export(
-            output_path, format="wav"
+            output_path, format="opus", parameters=["-b:a", "128k"]
         )
 
         return FileResponse(
             path=output_path,
-            media_type="audio/wav",
-            filename="silence.wav",
+            media_type="audio/opus",
+            filename=SILENCE_FILENAME,
             background=BackgroundTask(shutil.rmtree, temp_dir),
         )
 
     max_end = 0
     validated_sequence = []
-    for (inst, note, start, end) in sequence:
+
+    for inst, note, start, end in sequence:
         if start < 0 or end <= 0 or end <= start:
             raise HTTPException(
                 status_code=400, detail=f"Invalid timing: start={start}, end={end}"
             )
-
         if end > MAX_DURATION:
             raise HTTPException(
                 status_code=400,
@@ -47,65 +76,70 @@ def generate_music(
 
         max_end = max(max_end, end)
 
-        sample_path = SAMPLES_DIR / inst / f"{note}.wav"
-
-        if not sample_path.exists():
-            raise HTTPException(
-                status_code=404, detail=f"Sample not found: {inst}/{note}.wav"
-            )
-
-        validated_sequence.append((sample_path, start, end - start))
+        validated_sequence.append((inst, note, start, end - start))
 
     output = AudioSegment.silent(duration=max_end, frame_rate=SAMPLE_RATE)
 
-    for sample_path, start, length in validated_sequence:
-        try:
-            audio = AudioSegment.from_file(sample_path)
-        except CouldntDecodeError:
-            raise HTTPException(status_code=500, detail="Audio decoding failed")
+    for inst, note, start, length in validated_sequence:
+        audio = get_audio_segment(inst, note, SAMPLE_RATE)
 
-        if audio.frame_rate != SAMPLE_RATE:
-            audio = audio.set_frame_rate(SAMPLE_RATE)
+        original_length = len(audio)
 
-        if len(audio) > length:
-            audio = audio[:length]
-        elif len(audio) < length:
-            repeats = int(np.ceil(length / len(audio)))
-            audio = (audio * repeats)[:length]
+        if original_length > length:
+            audio_segment = audio[:length]
+        elif original_length < length:
+            repeats = int(np.ceil(length / original_length))
+            audio_segment = (audio * repeats)[:length]
+        else:
+            audio_segment = audio
 
-        output = output.overlay(audio, position=start)
+        output = output.overlay(audio_segment, position=start)
 
     temp_dir = Path(tempfile.mkdtemp())
-    output_path = temp_dir / "music.wav"
-    output.export(output_path, format="wav")
+    output_path = temp_dir / "music.opus"
+    output.export(output_path, format="opus", parameters=["-b:a", "128k"])
 
     return FileResponse(
         path=output_path,
-        media_type="audio/wav",
-        filename="music.wav",
+        media_type="audio/opus",
+        filename="music.opus",
         background=BackgroundTask(shutil.rmtree, temp_dir),
     )
 
 
+_INSTRUMENT_DATA_CACHE = None
+
+
 def get_instruments():
+    global _INSTRUMENT_DATA_CACHE
+    if _INSTRUMENT_DATA_CACHE is not None:
+        return _INSTRUMENT_DATA_CACHE
+
     instrument_data = defaultdict(list)
 
-    if not SAMPLES_DIR.exists() or not SAMPLES_DIR.is_dir():
+    try:
+        instruments = sorted(
+            [p for p in SAMPLES_DIR.iterdir() if p.is_dir()], key=lambda p: p.name
+        )
+    except FileNotFoundError:
+        _INSTRUMENT_DATA_CACHE = instrument_data
         return instrument_data
 
-    for instrument in sorted(SAMPLES_DIR.iterdir(), key=lambda p: p.name):
-        if not instrument.is_dir():
-            continue
-
+    for instrument in instruments:
         instrument_name = instrument.name
 
-        for note in sorted(instrument.iterdir(), key=lambda p: p.name):
-            if not note.is_file():
-                continue
+        try:
+            notes = sorted(
+                [p for p in instrument.iterdir() if p.is_file()], key=lambda p: p.name
+            )
+        except FileNotFoundError:
+            continue
 
+        for note in notes:
             note_name = note.stem
             instrument_data[instrument_name].append(note_name)
 
+    _INSTRUMENT_DATA_CACHE = instrument_data
     return instrument_data
 
 
@@ -137,8 +171,8 @@ def save_block_to_main(request):
     return {"status": "saved"}
 
 
-def get_block(request):
-    return blocks[request.fingerprint][request.name]
+def get_block(name, fingerprint):
+    return blocks[fingerprint][name]
 
 
 def play_block(request):
@@ -146,8 +180,8 @@ def play_block(request):
 
 
 def get_main(fingerprint):
-    user_data = main[fingerprint]  
-    
+    user_data = main[fingerprint]
+
     return [[key, *values] for key, values in user_data.items()]
 
 
@@ -158,23 +192,21 @@ def play_main(fingerprint):
     user_blocks = blocks.get(fingerprint)
 
     if not user_main or not user_blocks:
-        return generate_music([])  
+        return generate_music([])
 
     for block_name, block_position in user_main.items():
         if block_name in user_blocks:
-            
             note_sequence = user_blocks[block_name]
-            
+
             global_start = block_position[0]
             global_end = block_position[1]
 
             for note_data in note_sequence:
-                
                 inst, note, local_start, local_end = note_data
-                
+
                 new_start = local_start + global_start
                 new_end = min(local_end + global_start, global_end)
-                
+
                 temp_seq.append((inst, note, new_start, new_end))
 
     return generate_music(temp_seq)

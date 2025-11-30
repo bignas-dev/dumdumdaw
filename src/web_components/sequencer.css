@@ -1,4 +1,8 @@
 /* VISO HTML <BODY> ELEMENTO STILIAI */         
+* {
+    box-sizing: border-box; /* This is essential for alignment */
+}
+
 body {
     background-color: #344966;
     font-family: "Century Gothic";
