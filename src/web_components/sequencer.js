@@ -132,13 +132,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const parametersButton = document.createElement('button');
         parametersButton.className = "parametersVolumeButtons";
         parametersButton.id = `parambutton-${trackId}`;
-        parametersButton.innerHTML = '<i class="material-icons">music_note</i>';
+        parametersButton.textContent = 'P';
         parametersButton.addEventListener('click', () => openPianorollForTrack(trackId));
 
         // Volume mygtukas
         const volumeButton = document.createElement('button');
         volumeButton.className = "parametersVolumeButtons";
-        volumeButton.innerHTML = '<i class="material-icons">volume_up</i>';
+        volumeButton.textContent = "V";
 
         parametersVolumeButtonsContainer.appendChild(parametersButton);
         parametersVolumeButtonsContainer.appendChild(volumeButton);

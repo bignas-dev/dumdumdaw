@@ -211,25 +211,6 @@ h1.logo-text {
     color: black; /* Icons are black on the white button */
 }
 
-/* Editor-tools Button style*/
-#editor-tools {
-    display: flex;
-    flex-direction: row;
-    gap: 6px;
-    align-items: center;
-}
-
-#editor-tools .button.square {
-    border-radius: 50%;      
-    width: 40px;
-    height: 40px;
-    padding: 0;
-}
-
-#editor-tools .button.square .material-icons {
-    font-size: 24px;  
-}
-
 /* Text Button styles (e.g., Save, etc.) */
 .button.text, .text-button {
     background: var(--color-controls-light);
@@ -325,13 +306,6 @@ h1.logo-text {
 .parametersVolumeButtons:hover {
     background-color: #f7bbdf; /* Lighter pink on hover */
     transform: none;
-}
-
-/* VOLUME / PLAY ICON STILIAI */
-.parametersVolumeButtons i {
-    color: black;       
-    font-size: 20px;   
-    pointer-events: none; 
 }
 
 .selectInstrument {
