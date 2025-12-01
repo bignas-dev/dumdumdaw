@@ -6,7 +6,7 @@ Easy to use DAW online.
 
 1. Git clone and go to main directory
 ```bash
-git clone https://github.com/adomas457/Meilus-Co-Sound.git
+git clone https://github.com/bignas-dev/Meilus-Co-Sound.git
 cd Meilus-Co-Sound
 ```
 
