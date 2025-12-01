@@ -124,24 +124,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         label.textContent = `Track ${trackId}`;
         label.style.flex = '1';
 
-        // (P)ianoroll ir (V)olume mygtukų konteineris
-        const parametersVolumeButtonsContainer = document.createElement('div');
-        parametersVolumeButtonsContainer.style.display = "flex";
-
-        // Pianoroll mygtukas
-        const parametersButton = document.createElement('button');
-        parametersButton.className = "parametersVolumeButtons";
-        parametersButton.id = `parambutton-${trackId}`;
-        parametersButton.textContent = 'P';
-        parametersButton.addEventListener('click', () => openPianorollForTrack(trackId));
-
-        // Volume mygtukas
-        const volumeButton = document.createElement('button');
-        volumeButton.className = "parametersVolumeButtons";
-        volumeButton.textContent = "V";
-
-        parametersVolumeButtonsContainer.appendChild(parametersButton);
-        parametersVolumeButtonsContainer.appendChild(volumeButton);
+        // PAŠALINTA: Anksčiau čia buvo kodo eilutės, kurios kūrė 'parametersButton' (P mygtuką).
+        // Jos dabar yra visiškai pašalintos.
 
         // ===== Instrumento pasirinkimo dropdown sąrašas =====
         const selectInstrument = document.createElement('select');
@@ -167,8 +151,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Final assembly
         labelBox.appendChild(label);
-        labelBox.appendChild(parametersVolumeButtonsContainer);
         labelBox.appendChild(selectInstrument);
+        // PAŠALINTA: Iš `labelBox` surinkimo pašalintas mygtukas.
         labelsDiv.appendChild(labelBox);
     }
 
