@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 import backend_functions
 
-HOST = "0.0.0.0"
+HOST = "127.0.0.1"
 PORT = 3010
 
 app = FastAPI(title="DumDumDaw")
