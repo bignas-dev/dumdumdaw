@@ -1003,6 +1003,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ========== GROJIMO FUNKCIJA (ĮRAŠAS + LINIJA) ==========
 
+// ========== GROJIMO FUNKCIJA (ĮRAŠAS + LINIJA) ==========
     function playPlayback() {
 
         if (isPlaying) return;
@@ -1010,24 +1011,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Bandyt pakraut įrašą
         getAudioForPlay()
             .then(() => {
-                // Nuo čia kodas tęsis tik tada, kai bus pakrautas įrašas (blockAudio audio objektas)
                 if (blockAudio) {
-                    // Prasidės įrašo grojimas
+                    // PRATĘSIMO LOGIKA: Nustato garso grojimo poziciją pagal pauzės poslinkį
+                    blockAudio.currentTime = pauseOffset / 1000; // blockAudio laikas yra sekundėmis
                     blockAudio.play();
 
                     // Prasidės linijos judėjimas
                     isPlaying = true;
-                    startTimestamp = null; 
+                    // SVARBU: Pradedant animaciją, nustatome startTimestamp.
+                    // Jei tęsiama po pauzės, startTimestamp atnaujinamas taip, kad
+                    // performance.now() - startTimestamp būtų lygus pauseOffset.
+                    startTimestamp = performance.now(); 
                     requestAnimationFrame(updatePlayhead);
                 } else {
-                    // Fallback if loading failed silently (should be caught by catch block)
                     console.error("Playback failed: blockAudio is not initialized.");
                 }
             })
             .catch(error => {
-                // Handle any error from the fetch/load process
                 console.error("Could not start playback because of a loading error:", error);
             });
+    }
+
+    // ========== PAUZĖS FUNKCIJA (ĮRAŠAS + LINIJA) ==========
+    function pausePlayback() {
+
+        if (!isPlaying || !blockAudio) return;
+
+        blockAudio.pause();      // sustabdo įrašą, nenumušant esamo grojimo laiko
+        
+        // Linijai:
+
+        isPlaying = false;
+        const currentTime = performance.now();
+        
+        // SVARBU: Atnaujina pauseOffset
+        if (startTimestamp !== null) {
+            // Apskaičiuoja praėjusį laiką nuo paskutinio paleidimo ir prideda prie bendro poslinkio
+            pauseOffset += currentTime - startTimestamp;
+        }
+        
     }
 
     // ========== PAUZĖS FUNKCIJA (ĮRAŠAS + LINIJA) ==========
