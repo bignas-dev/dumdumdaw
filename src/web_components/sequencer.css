@@ -8,6 +8,7 @@ body {
     font-family: "Century Gothic";
 }
 
+
 /* --- HEADER AND CONTROL STYLES --- */
 
 /* Replaced the inline style on the main header div */
@@ -193,13 +194,12 @@ body {
     height: 80px;
     background: #2ecc71;
     border: 1px solid #1d8046;
-    /*cursor: move;*/ /* gal judinsis tik su rankena? */
     display: block;
     border-radius: 4px;
     box-sizing: border-box;
     overflow-wrap: anywhere;
     overflow: hidden;
-    z-index: 100;  /* kad natų blokas būtų virš takto linijų, o ne po jomis */
+    z-index: 100;       /* kad natų blokas būtų virš takto linijų, o ne po jomis */
 }
 
 /* NATŲ BLOKELIO "RANKENOS" (viršuje) STILIAI */
@@ -209,13 +209,13 @@ body {
     background: #27ae60;
     cursor: move;
     border-bottom: 1px solid rgba(0,0,0,0.15);
-    z-index: 110;  /* šiek tiek aukštesnis už parent elemento noteBlock, kad neužsistotų */
+    z-index: 110;       /* šiek tiek aukštesnis už parent elemento noteBlock, kad neužsistotų */
 }
 
 /* NATŲ BLOKO LABELŲ ELEMENTO (jame tik blockDate, kolkas) STILIAI */
 .blockLabels {
-    height: 66px;  /* Kad užimtų likusį noteBlock aukštį (80 - 12 - (kraštai) = 66) */
-    z-index: 110;  /* šiek tiek aukštesnis už parent elemento noteBlock, kad neužsistotų */
+    height: 66px;       /* Kad užimtų likusį noteBlock aukštį (80 - 12 - (kraštai) = 66) */
+    z-index: 110;       /* šiek tiek aukštesnis už parent elemento noteBlock, kad neužsistotų */
 }
 
 /* NATŲ BLOKO DATOS (TEKSTAS DIV'E) STILIAI */
@@ -224,7 +224,7 @@ body {
     font-size: 10px;
     padding: 2px;
     pointer-events: none;
-    z-index: 110;  /* šiek tiek aukštesnis už parent elemento noteBlock, kad neužsistotų */
+    z-index: 110;       /* šiek tiek aukštesnis už parent elemento noteBlock, kad neužsistotų */
 }
 
 /* TRACK 1 LABEL LANGELIO STILIAI (kad apvalint jo top-left kampą) */

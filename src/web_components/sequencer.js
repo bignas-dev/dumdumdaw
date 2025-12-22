@@ -1,4 +1,5 @@
 // Function to generate and retrieve a persistent user fingerprint
+
 function getFingerprint() {
     let fp = localStorage.getItem('user_fingerprint');
     if (!fp) {
@@ -8,9 +9,12 @@ function getFingerprint() {
     }
     return fp;
 }
+
 const USER_FINGERPRINT = getFingerprint();
 
+
 // --- UTILITIES ---
+
 const TicksToPx = (ticks) => ticks / 10;
 const PxToTicks = (px) => px * 10;
 const snapToGrid = (value, gridSize) => Math.round(value / gridSize) * gridSize;
@@ -20,7 +24,9 @@ function prepareInstrumentNameForDisplay(instrument) {
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
 }
+
 // --- END UTILITIES ---
+
 
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -36,14 +42,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const labelsDiv = document.getElementById('labels');
     const playhead = document.getElementById("playhead");
 
+    // Padarom labelsDiv ir sequencer elementus tuščius, jeigu užkrovus puslapį tokie dar nebuvo (po to juose užkrausim visus natų blokus)
     labelsDiv.innerHTML = '';
     sequencer.innerHTML = '';
 
-    let trackNotes = {};
-    let noteCounter = 0;
+    // Visų DAW'o instrumentų sąrašas (list)
     let instrumentList = [
         {value: "", text: "Choose instrument"}
     ];
+    // Trackams parinktų instrumentų sąrašas (object)
     let trackInstruments = {};
 
     // CENTRALIZING AWAIT CALLS
@@ -53,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         getTrackInstruments()
     ]);
 
-    console.log(mainBlockData);
+
 
     // ========================================= SEQUENCER KOMPONENTŲ DALIS =========================================
 
@@ -69,11 +76,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     sequencerContainer.style.height = totalSequencerHeight + 15 + 'px';
     labelsDiv.style.height = totalSequencerHeight + 15 + 'px';
     
+    // Trackų elementai (natų blokai)
     const trackElements = {};
+
 
     // ========== TRACKŲ SUKŪRIMO DALIS (didelis for loopas) ==========
 
     for (let i = 0; i < trackCount; i++) {
+
         const trackId = String(i + 1);
         const topPosition = i * trackHeight;
 
@@ -98,9 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         track.addEventListener("dblclick", () => {
             openPianorollForTrack(trackId);
         });
-        // --------------------------------------------------------
-
-        trackNotes[i] = [];
+        // ----------------------
 
         // --- Label Box ---
         const labelBox = document.createElement('div');
@@ -124,17 +132,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         label.textContent = `Track ${trackId}`;
         label.style.flex = '1';
 
-        // PAŠALINTA: Anksčiau čia buvo kodo eilutės, kurios kūrė 'parametersButton' (P mygtuką).
-        // Jos dabar yra visiškai pašalintos.
-
         // ===== Instrumento pasirinkimo dropdown sąrašas =====
         const selectInstrument = document.createElement('select');
         selectInstrument.className = "selectInstrument";
         selectInstrument.name = `selectInstrument${trackId}`;
         selectInstrument.id = `selectInstrument${trackId}`;
 
+        // Pasirinktą instrumentą priskiriam trackui (įdedam į objectą trackInstruments)
         const assignedInstrument = trackInstruments[trackId];
 
+        // Jei instrumentas trackui priskirtas, tai jo vienintelis dropdown menu pasirinkimas bus tas instrumentas.
+        // Jei instrumentas nepasirinktas, tai dropdown menu'je bus visi DAW instrumentai (galima rinktis)
         if (assignedInstrument) {
             const instrumentOption = document.createElement("option");
             instrumentOption.value = assignedInstrument;
@@ -152,17 +160,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Final assembly
         labelBox.appendChild(label);
         labelBox.appendChild(selectInstrument);
-        // PAŠALINTA: Iš `labelBox` surinkimo pašalintas mygtukas.
+
         labelsDiv.appendChild(labelBox);
+
     }
 
 
-    // ========== TAKTO LINIJŲ SUKŪRIMO (Bar Lines) ==========
+    // ========== TAKTO LINIJŲ SUKŪRIMAS (Bar Lines) ==========
 
     const totalBarLines = Math.floor(timelineWidthPx / barLineGapLengthPx);
     const barLinesFragment = document.createDocumentFragment(); 
 
     for (let i = 1; i < totalBarLines; i++) {
+
         let barLine = document.createElement("div");
         barLine.className = "barLine";
         const leftPosition = i * barLineGapLengthPx;
@@ -172,19 +182,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             background: ${(i % 4 === 0) ? '#777777' : '#333333'};
         `;
         barLinesFragment.appendChild(barLine);
+
     }
+
     sequencerContainer.appendChild(barLinesFragment);
+
+
 
 
     // ============================== SEQUENCERIO ESMINIŲ FUNKCIONALUMŲ DALIS ==============================
 
+
+    // Sudėliojami visi esami natų blokai sequenceryje
     placeBlocksInSequencer(mainBlockData);
 
+
     // ========== ESAMŲ BLOKŲ VIZUALUS SUDĖLIOJIMAS SEQUENCERY ==========
+
     function placeBlocksInSequencer(mainBlockData) {
+
         const blocksFragment = document.createDocumentFragment(); 
 
         mainBlockData.forEach(function(singleBlock) {
+
             const blockId = singleBlock[0];
             const [trackOfBlock] = blockId.split("_");
             const trackElement = trackElements[trackOfBlock];
@@ -225,73 +245,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             blocksFragment.appendChild(block);
 
-            // makeDraggable(block); // Disabled
-
             blockLabels.addEventListener("dblclick", () => {
                 openPianorollOfExistingBlock(block.id);
             });
+
         });
         
         sequencer.appendChild(blocksFragment);
+
     }
     
-    // ========== NATŲ-BLOKŲ STUMDYMO PELE FUNKCIJA (LOCKED IN PLACE) ==========
-    function makeDraggable(block) {
-        // FULL LOCK: Blocks are completely undraggable
-        return; 
-        
-        let offsetX;
-        let finalNewLeft = null;
-
-        block.addEventListener('mousedown', (e) => {
-            if (e.target.className !== 'blockHandle') return;
-
-            offsetX = e.clientX - block.getBoundingClientRect().left;
-
-            function mouseMoveHandler(e) {
-                const rect = sequencer.getBoundingClientRect();
-                let newLeft = e.clientX - rect.left - offsetX;
-                newLeft = Math.max(0, Math.min(newLeft, timelineWidthPx - block.offsetWidth));
-                
-                newLeft = snapToGrid(newLeft, gridSize); 
-                block.style.left = newLeft + 'px';
-
-                const indexOfDraggedBlock = mainBlockData.findIndex(singleBlock => singleBlock[0] === block.id);
-                if (indexOfDraggedBlock !== -1) {
-                    mainBlockData[indexOfDraggedBlock][1] = PxToTicks(newLeft); 
-                    finalNewLeft = newLeft;
-                }
-            }
-
-            function mouseUpHandler() {
-                document.removeEventListener('mousemove', mouseMoveHandler);
-                document.removeEventListener('mouseup', mouseUpHandler);
-
-                if (finalNewLeft !== null) {
-                    saveMainComposition();
-                    if (mainAudio && mainAudio.src) {
-                        URL.revokeObjectURL(mainAudio.src);
-                    }
-                    mainAudio = null;
-                    console.log(`Block ${block.id} moved and composition saved. Main audio invalidated. New start time: ${PxToTicks(finalNewLeft)}ms`);
-                }
-            }
-
-            document.addEventListener('mousemove', mouseMoveHandler);
-            document.addEventListener('mouseup', mouseUpHandler);
-        });
-    }
 
     // ========== NAUJO NATŲ BLOKO PIANOROLLO ATIDARYMO FUNKCIJA ==========
+
     function openPianorollForTrack(trackId) {
+
         let selectElement = document.getElementById("selectInstrument" + trackId);
         let chosenInstrument = selectElement.value;
         
         if (!chosenInstrument) {
+
             let backgroundOfSelect = selectElement.style.background;
             selectElement.style.background = "#ff0000";
             setTimeout(function(){ selectElement.style.background = backgroundOfSelect }, 250);
+
             return;
+
         };
 
         saveMainComposition();
@@ -301,10 +280,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         finalUrl.searchParams.set("instrument", chosenInstrument);
 
         window.open(finalUrl.href, "_self");
+
     }
 
+
     // ========== PASIRINKTO ESAMO NATŲ BLOKO PIANOROLLO ATIDARYMAS ==========
+
     function openPianorollOfExistingBlock(blockId) {
+
         saveMainComposition();
 
         let blockNameParameters = blockId.split("_");
@@ -318,19 +301,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         finalUrl.searchParams.set("block", blockId);
 
         window.open(finalUrl.href, "_self");
+
     }
+
+
+
 
     // ============================== RYŠIO SU BACKENDU FUNKCIJOS ==============================
 
+
     // ========== SEQUENCERIO KOMPOZICIJOS IŠSAUGOJIMAS ==========
+
     const saveCompositionButton = document.getElementById("saveComposition");
     if (saveCompositionButton) saveCompositionButton.addEventListener('click', saveMainComposition);
 
     function saveMainComposition() {
+
         const preparedCompositionData = {
             sequence: mainBlockData, 
             fingerprint: USER_FINGERPRINT
         };
+
         console.log("Saving composition:", preparedCompositionData);
 
         fetch("/save_main", {
@@ -341,38 +332,56 @@ document.addEventListener('DOMContentLoaded', async () => {
         .then(response => response.json())
         .then(data => console.log("Successfully saved:", data))
         .catch(error => console.warn("Save to backend failed:", error));
+
     }
     
+
     // ========== SEQUENCERIO KOMPOZICIJOS GAVIMAS IR PAKROVIMAS ==========
+
     async function getMainComposition() {
+
         if (!USER_FINGERPRINT || typeof USER_FINGERPRINT !== 'string' || USER_FINGERPRINT.trim() === '') {
+
             console.warn("USER_FINGERPRINT is missing or invalid. Cannot fetch composition.");
             mainBlockData = [];
+
             return;
+
         }
 
         try {
+
             const url = `/get_main?fingerprint=${encodeURIComponent(USER_FINGERPRINT)}`;
             
             const response = await fetch(url);
 
             if (!response.ok) {
+
                 console.error(`HTTP error! status: ${response.status} for URL: ${url}`);
                 throw new Error(`Server returned status ${response.status}`);
+
             }
 
             const data = await response.json();
             mainBlockData = data;
             console.log("Main composition loaded:", mainBlockData);
+
         } catch (error) {
+
             console.error("Failed to fetch main composition:", error);
             mainBlockData = [];
+
         }
+
     }
 
+
     // ========== ESAMŲ INSTRUMENTŲ GAVIMAS (iš backend) ==========
+
     async function getInstrumentsAndAddToList() {
+
         try {
+
             const response = await fetch(`/get_instruments`);
             
             if (!response.ok) {
@@ -385,31 +394,46 @@ document.addEventListener('DOMContentLoaded', async () => {
             const instrumentArray = Object.keys(instrumentsData);
 
             instrumentArray.forEach(instrument => {
+
                 let capitalizedInstrumentName = prepareInstrumentNameForDisplay(instrument);
                 instrumentList.push({value: instrument, text: capitalizedInstrumentName});
+
             });
+
         } catch (error) {
             console.error("Failed to fetch or process instruments:", error);
         }
+
     }
 
+
     // ========== TRACKAM PRISKIRTŲ INSTRUMENTŲ SĄRAŠO GAVIMAS ==========
+
     async function getTrackInstruments() {
+
         try {
+
             const response = await fetch(`/get_track_instruments?fingerprint=${USER_FINGERPRINT}`)
             const data = await response.json();
             trackInstruments = data;
+
         } catch (error) {
             console.error("Failed to fetch track instruments:", error);
             trackInstruments = {};
         }
+
     }
+
+
 
 
     // ============================== ĮRAŠŲ FUNKCIONALUMAS (PLAY, PAUSE, STOP, EXPORT) ==============================
 
+
     // ========== KOMPOZICIJOS ĮRAŠO GAVIMAS IŠ BACKENDO ==========
+
     async function getAudioForPlay() {
+
         if (mainAudio || isAudioLoading) return Promise.resolve();
 
         isAudioLoading = true;
@@ -418,6 +442,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             method: 'POST'
         })
         .then(async response => {
+
             if (!response.ok) throw new Error ("Main audio retrieval error " + response.status);
 
             const audioBlob = await response.blob();
@@ -429,15 +454,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             isAudioLoading = false;
             console.log("Audio loaded and ready for playback.");
+
         })
         .catch(error => {
+
             isAudioLoading = false;
             console.warn("Error playing main sequence:", error);
             throw error;
+
         });
+
     }
 
+
+
+
     // ==================== GROJIMO IR PLAYBACK LINIJOS VIZUALUS FUNKCIONALUMAS ====================
+
     let isPlaying = false;
     let startTimestamp = null;
     let pauseOffset = 0;
@@ -446,12 +479,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     // ========== LINIJOS JUDĖJIMO FUNKCIJA ==========
+
     function updatePlayhead(timestamp) {
+
         if (!isPlaying) return;
 
-        if (!startTimestamp) {
-            startTimestamp = timestamp;
-        }
+        if (!startTimestamp) startTimestamp = timestamp;
 
         const elapsed = timestamp - startTimestamp + pauseOffset;
         const x = elapsed * pixelsPerMs;
@@ -460,18 +493,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (elapsed < totalDuration) {
             requestAnimationFrame(updatePlayhead);
-        } else {
+        }
+        else {
             stopPlayback();
         }
+
     }
 
 
     // ========== GROJIMO FUNKCIJA (ĮRAŠAS + LINIJA) ==========
+
     function playPlayback() {
+
         if (isPlaying) return;
         
         getAudioForPlay()
             .then(() => {
+
                 if (mainAudio) {
                     mainAudio.play();
 
@@ -481,14 +519,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else {
                     console.error("Playback failed: mainAudio is not initialized.");
                 }
+
             })
             .catch(error => {
                 console.error("Could not start playback because of a loading error:", error);
             });
     }
 
+
     // ========== PAUZĖS FUNKCIJA (ĮRAŠAS + LINIJA) ==========
+
     function pausePlayback() {
+
         if (!isPlaying || !mainAudio) return;
 
         mainAudio.pause();
@@ -499,10 +541,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (startTimestamp !== null) {
             pauseOffset += currentTime - startTimestamp;
         }
+
     }
 
+
     // ========== STABDYMO FUNKCIJA (ĮRAŠAS + LINIJA) ==========
+
     function stopPlayback() {
+
         if (!mainAudio) return;
 
         mainAudio.pause();
@@ -512,14 +558,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         pauseOffset = 0;
         startTimestamp = null;
         playhead.style.transform = `translateX(0px)`;
+
     }
 
 
     // ========== LINIJOS JUDĖJIMO SCROLLINANT (horizontaliai) SUTVARKYMAS ==========
+
     sequencerContainer.addEventListener("scroll", () => {
+
         const offset = sequencerContainer.scrollLeft;
         playhead.style.transform = `translateX(${-offset}px)`; 
+
     });
+
 
     // ========== PLAY, PAUSE, STOP MYGTUKŲ FUNKCIONALUMAS ==========
 
@@ -532,17 +583,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (returnButton) returnButton.addEventListener('click', stopPlayback);
 
 
-    // ========== KOMPOZICIJOS ĮRAŠO ATSISIUNTIMAS !!!!!!! ==========
+    // ========== KOMPOZICIJOS ĮRAŠO ATSISIUNTIMAS ==========
+
     function downloadMainAudio() {
+
         console.log("Starting audio download...");
 
         fetch(`/play_main?fingerprint=${USER_FINGERPRINT}`, {
             method: 'POST',
         })
         .then(async response => {
+
             if (!response.ok) {
+
                 const errorText = await response.text();
                 throw new Error(`Download failed with status ${response.status}: ${errorText}`);
+
             }
             
             const audioBlob = await response.blob();
@@ -556,15 +612,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             URL.revokeObjectURL(audioUrl);
             console.log("Download initiated for composition.wav");
+
         })
         .catch(error => {
             console.error('Error during audio download:', error);
             alert(`Failed to download audio: ${error.message}`);
         });
+        
     }
 
-    // Attach this function to your download button
+    // Padaroma, kad mygtukas "Export" iššauktų įrašo atsisiuntimo funkciją
+
     const downloadButton = document.getElementById("exportButton");
     if (downloadButton) downloadButton.addEventListener('click', downloadMainAudio);
     
+
 });

@@ -10,6 +10,8 @@ body {
     margin: 0; /* Good practice to remove default body margin */
 }
 
+
+
 /* --- HEADER AND CONTROL STYLES --- */
 
 /* New class for the main header div container */
@@ -130,9 +132,6 @@ body {
     padding-top: 0; /* Ensure no padding offsets the rows */
 }
 
-/* FIX: Force Pitch Labels to match Note Height perfectly.
-   Assuming your JS generates <div> elements inside #pitchLabels 
-*/
 #pitchLabels > div {
     height: 15px;      /* Must match .note height */
     line-height: 15px; /* Centers text vertically */
@@ -145,16 +144,16 @@ body {
 }
 
 #pianoroll-container {
-    width:900px;
-    overflow-x:auto;
-    overflow-y:hidden;
+    width: 900px;
+    overflow-x: auto;
+    overflow-y: hidden;
     position: relative;
 }
 
 #pianoroll.pianoroll-grid {
-    width:10000px; /* Large width for scrolling */
-    background:#111;
-    position:relative;
+    width: 10000px; /* Large width for scrolling */
+    background: #111;
+    position: relative;
     /* Optional: CSS Grid background pattern to ensure visual alignment */
     background-image: linear-gradient(#333 1px, transparent 1px);
     background-size: 100% 15px; /* Matches note height */
