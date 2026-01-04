@@ -10,17 +10,17 @@ Easy to use DAW online.
 
 ## Project tools
 
-FastAPI (Python) - HTTP Sever
-Webelements + Vanilla JS - Frontend
-SQLite - Database
-Caddy - Reverse proxy
-Docker - Deployment
-Pydub (Python) - music processing
+- FastAPI (Python) - HTTP Server
+- Webelements + Vanilla JS - Frontend
+- SQLite - Database
+- Caddy - Reverse proxy
+- Docker - Deployment
+- Pydub (Python) - music processing
 
 ## Developement tools
 
-git - version control
-vim - IDE
-github - remote git host
-discord - management
-messenger - management
+- git - version control
+- vim - IDE
+- github - remote git host
+- discord - management
+- messenger - management
