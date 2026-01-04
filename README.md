@@ -4,20 +4,23 @@ Easy to use DAW online.
 
 ## Installation
 
-1. Git clone and go to main directory
-```bash
-git clone https://github.com/bignas-dev/Meilus-Co-Sound.git
-cd Meilus-Co-Sound
-```
+1. Get the [Docker image](https://vult-my.sharepoint.com/:u:/g/personal/ignas_meilus_mif_stud_vu_lt/IQBOsvmcus1wRbuqeE1PpvR3AX8KY09N2ZrgM-kWsexYK9w?e=mvqJAc)
 
-2. Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
+2. Run `docker run -d -p 3001:3001 -v sigmavolume:/data myimage`
 
-3. Install dependencies
-```bash
-uv sync
-```
+## Project tools
 
-4. Run server
-```bash
-uv run src/main.py
-```
+FastAPI (Python) - HTTP Sever
+Webelements + Vanilla JS - Frontend
+SQLite - Database
+Caddy - Reverse proxy
+Docker - Deployment
+Pydub (Python) - music processing
+
+## Developement tools
+
+git - version control
+vim - IDE
+github - remote git host
+discord - management
+messenger - management
