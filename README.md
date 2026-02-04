@@ -6,7 +6,11 @@ Easy to use DAW webpage.
 
 Uni project.
 
-## Installation
+## Quick Start
+
+https://www.dumdumdaw.com
+
+## Usage
 
 1. Get the [Docker image](https://vult-my.sharepoint.com/:u:/g/personal/ignas_meilus_mif_stud_vu_lt/IQBOsvmcus1wRbuqeE1PpvR3AX8KY09N2ZrgM-kWsexYK9w?e=mvqJAc)
 
