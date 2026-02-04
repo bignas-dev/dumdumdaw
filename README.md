@@ -1,6 +1,10 @@
 # DUMDUMDAW
 
-Easy to use DAW online.
+Easy to use DAW webpage.
+
+## Motivation
+
+Uni project.
 
 ## Installation
 
@@ -28,3 +32,7 @@ Easy to use DAW online.
 - github - remote git host
 - discord - management
 - messenger - management
+
+## Contributing
+
+You can't contribute, just give up immediately.
