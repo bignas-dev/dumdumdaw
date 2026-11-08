@@ -1,6 +1,6 @@
 # DUMDUMDAW
 
-Easy to use DAW webpage.
+Easy to use DAW.
 
 ## Motivation
 
@@ -12,13 +12,7 @@ https://www.dumdumdaw.com
 
 ## Usage
 
-1. Get the [Docker image](https://vult-my.sharepoint.com/:u:/g/personal/ignas_meilus_mif_stud_vu_lt/IQBOsvmcus1wRbuqeE1PpvR3AX8KY09N2ZrgM-kWsexYK9w?e=mvqJAc)
-
-2. Unzip `gzip -d dumdumdaw.tar.gz`
-
-3. Load `docker load -i dumdumdaw.tar`
-
-4. Run `docker run -d -p 3001:3001 -v sigmavolume:/data myimage`
+> TODO
 
 ## Project tools
 
