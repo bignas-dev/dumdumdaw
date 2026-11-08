@@ -1,10 +1,10 @@
-# DUMDUMDAW
+# dumdumdaw
 
-Easy to use DAW.
+Easy to use digital audio workstation (DAW).
 
 ## Motivation
 
-Uni project.
+All music tools are paid, difficult to use or outdated. This tool tries to solve all of those problems.
 
 ## Quick Start
 
@@ -12,16 +12,21 @@ https://www.dumdumdaw.com
 
 ## Usage
 
-> TODO
+> you have to have uv installed
 
-## Project tools
+1) git clone the repo: `git clone https://github.com/bignas-dev/dumdumdaw.git`
+2) cd into the directory `cd dumdumdaw`
+3) install dependencies `uv sync`
+4) run the app `uv run src/main.py` or `make`
 
-- FastAPI (Python) - HTTP Server
-- Webelements + Vanilla JS - Frontend
-- SQLite - Database
+## Project Stack
+
+- Frontend: Vanilla JS
+- Backend: FastAPI (Python)
+- Database: SQLite
 - Caddy - Reverse proxy
 - Docker - Deployment
-- Pydub (Python) - music processing
+- Pydub (Python) - music processing library
 
 ## Developement tools
 
@@ -33,4 +38,4 @@ https://www.dumdumdaw.com
 
 ## Contributing
 
-You can't contribute, just give up immediately.
+Feel free open a pull request, if you have something to contribute.
