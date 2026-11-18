@@ -1,7 +1,7 @@
 # Configuration
 APP_NAME := dumdumdaw
 IMAGE := ghcr.io/bignas-dev/$(APP_NAME)
-.PHONY: run sync lint format docker-build docker-run docker-stop docker-push docker-pull docker-deploy help
+.PHONY: run sync lint format docker-build docker-run docker-stop docker-push docker-pull docker-deploy cloc help
 
 run: sync ## Install project dependencies
 	uv run src/main.py
@@ -34,6 +34,9 @@ docker-push: docker-build ## Build and push image to GHCR
 
 docker-pull: ## Pull image from GHCR
 	docker pull $(IMAGE):latest
+
+cloc: ## Count lines of code
+	cloc . --vcs git
 
 help: ## Help message
 	@echo "usage:"
