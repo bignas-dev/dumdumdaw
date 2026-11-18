@@ -15,7 +15,6 @@ check: ## Check code with Ruff
 format: ## Format code with Ruff
 	ruff format .
 
-# Docker
 docker-build: ## Build Docker image
 	docker build -t $(APP_NAME):latest .
 
@@ -27,13 +26,15 @@ docker-run: ## Run container locally
 docker-stop: ## Stop and remove local container
 	docker rm -f $(APP_NAME)
 
-# GHCR
 docker-push: docker-build ## Build and push image to GHCR
 	docker tag $(APP_NAME):latest $(IMAGE):latest
 	docker push $(IMAGE):latest
 
 docker-pull: ## Pull image from GHCR
 	docker pull $(IMAGE):latest
+
+docker-compose: docker-pull ## Run image from GHCR
+	docker compose up -d
 
 cloc: ## Count lines of code
 	cloc . --vcs git
