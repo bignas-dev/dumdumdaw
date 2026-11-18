@@ -1,10 +1,10 @@
 # dumdumdaw
 
-Easy to use digital audio workstation (DAW).
+A modern digital audio workstation (DAW) that doesn't get in your way of making music.
 
 ## Motivation
 
-All music tools are paid, difficult to use or outdated. This tool tries to solve all of those problems.
+Many music creation tools are expensive, difficult to use, outdated or has a combination for these flaws. This creates barriers for music creators. DumDumDaw project aims to change that by making music creation accessible, simple and enjoyable for everyone.
 
 ## Usage
 
