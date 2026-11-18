@@ -26,3 +26,11 @@ docker-run: ## Run container locally
 
 docker-stop: ## Stop and remove local container
 	docker rm -f $(APP_NAME)
+
+# GHCR
+docker-push: docker-build ## Build and push image to GHCR
+	docker tag $(APP_NAME):latest $(IMAGE):latest
+	docker push $(IMAGE):latest
+
+docker-pull: ## Pull image from GHCR
+	docker pull $(IMAGE):latest
