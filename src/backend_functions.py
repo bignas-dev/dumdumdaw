@@ -110,7 +110,7 @@ def init_database():
 
 @contextmanager
 def get_db_connection():
-    os.mkdir(DB_FOLDER)
+    os.makedirs(DB_FOLDER, exist_ok=True)
     conn = sqlite3.connect(
         DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
     )
