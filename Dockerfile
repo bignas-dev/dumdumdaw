@@ -2,16 +2,17 @@ FROM python:3.12-slim-trixie
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+WORKDIR /app
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ffmpeg && \
-    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml uv.lock ./
 
-RUN uv sync --locked --no-dev
+RUN uv sync --locked --no-dev --no-install-project
 
-WORKDIR /src
-COPY src/ .
+COPY src/ ./src/
 
-CMD ["uv", "run", "main.py"]
+CMD ["uv", "run", "--no-sync", "src/main.py"]
+
