@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 import backend_functions
 
 HOST = "0.0.0.0"
-PORT = 3010
+PORT = 3000
 
 app = FastAPI(title="DumDumDaw")
 
