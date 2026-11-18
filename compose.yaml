@@ -1,0 +1,7 @@
+services:
+  dumdumdaw:
+    image: ghcr.io/bignas-dev/dumdumdaw:latest
+    container_name: dumdumdaw
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
