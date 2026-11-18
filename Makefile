@@ -1,7 +1,7 @@
 # Configuration
 APP_NAME := dumdumdaw
 IMAGE := ghcr.io/bignas-dev/$(APP_NAME)
-.PHONY: run sync lint format docker-build docker-run docker-stop docker-push docker-pull deploy
+.PHONY: run sync lint format docker-build docker-run docker-stop docker-push docker-pull docker-deploy help
 
 run: sync ## Install project dependencies
 	uv run src/main.py
@@ -34,3 +34,9 @@ docker-push: docker-build ## Build and push image to GHCR
 
 docker-pull: ## Pull image from GHCR
 	docker pull $(IMAGE):latest
+
+help: ## Help message
+	@echo "usage:"
+	@echo
+	@sed -n 's/^\([A-Za-z0-9_.-]*\):.*## \(.*\)$$/\t\1: \2/p' Makefile | sort | column -t -s ':'
+	@echo
