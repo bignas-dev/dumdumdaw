@@ -1,7 +1,13 @@
-.PHONY: sync run
+.PHONY: run sync lint format
 
-run: sync
+run: sync ## Install project dependencies
 	uv run src/main.py
 
-sync:
+sync: ## Install project dependencies
 	uv sync
+
+check: ## Check code with Ruff
+	 ruff check .
+
+format: ## Format code with Ruff
+	ruff format .
