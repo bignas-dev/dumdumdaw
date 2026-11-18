@@ -1,23 +1,25 @@
-import sqlite3
 import json
+import os
 import shutil
+import sqlite3
 import tempfile
-from pathlib import Path
+from collections import defaultdict
 from contextlib import contextmanager
+from dataclasses import dataclass
+from pathlib import Path
+
 import numpy as np
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError
 from starlette.background import BackgroundTask
-from dataclasses import dataclass
-from collections import defaultdict
 
 SAMPLE_RATE = 44100
 SAMPLES_DIR = Path(__file__).parent / "samples"
 MAX_DURATION = 1_000_000
+DB_FOLDER = Path(__file__).parent / "database"
 DB_PATH = Path(__file__).parent / "database" / "music_data.db"
-
 AUDIO_CACHE = {}
 
 
@@ -108,6 +110,7 @@ def init_database():
 
 @contextmanager
 def get_db_connection():
+    os.mkdir(DB_FOLDER)
     conn = sqlite3.connect(
         DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
     )
